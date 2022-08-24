@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neco.AspNet", "Neco.AspNet\Neco.AspNet.csproj", "{CBBFE2A9-D585-4742-A732-8FBD6CB48ACA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neco.Test", "Neco.Test\Neco.Test.csproj", "{FDB55A2A-3EBE-457C-B0F1-0343E3743D31}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neco.Common", "Neco.Common\Neco.Common.csproj", "{0EA0E032-2E1B-456F-A643-0FB2B28D8CAF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CBBFE2A9-D585-4742-A732-8FBD6CB48ACA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBBFE2A9-D585-4742-A732-8FBD6CB48ACA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBBFE2A9-D585-4742-A732-8FBD6CB48ACA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBBFE2A9-D585-4742-A732-8FBD6CB48ACA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDB55A2A-3EBE-457C-B0F1-0343E3743D31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDB55A2A-3EBE-457C-B0F1-0343E3743D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDB55A2A-3EBE-457C-B0F1-0343E3743D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDB55A2A-3EBE-457C-B0F1-0343E3743D31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EA0E032-2E1B-456F-A643-0FB2B28D8CAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EA0E032-2E1B-456F-A643-0FB2B28D8CAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EA0E032-2E1B-456F-A643-0FB2B28D8CAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EA0E032-2E1B-456F-A643-0FB2B28D8CAF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

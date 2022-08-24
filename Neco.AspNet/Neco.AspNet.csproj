@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <ProjectGuid>2E5A050F-970A-437B-B98B-2D80EC7FB84A</ProjectGuid>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PackageVersion>0.0.2-alpha</PackageVersion>
+        <Title>Neco.AspNet</Title>
+        <PackageId>Neco.AspNet</PackageId>
+        <Authors>Darcara</Authors>
+        <Copyright>Copyright (c) Darcara</Copyright>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <Description>Necessary Code for AspNet - Commonly required web code fragments</Description>
+        <PackageProjectUrl>https://github.com/Darcara/neco</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Darcara/neco</RepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Neco.Common\Neco.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="README.md" />
+    </ItemGroup>
+</Project>
+
+
