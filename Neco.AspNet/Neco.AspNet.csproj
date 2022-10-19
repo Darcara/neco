@@ -7,7 +7,7 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
-        <PackageVersion>0.0.2-alpha</PackageVersion>
+        <PackageVersion>0.0.3-alpha</PackageVersion>
         <Title>Neco.AspNet</Title>
         <PackageId>Neco.AspNet</PackageId>
         <Authors>Darcara</Authors>
