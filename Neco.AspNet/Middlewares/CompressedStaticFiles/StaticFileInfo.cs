@@ -12,6 +12,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Neco.Common.Concurrency;
+using Neco.Common.Extensions;
 
 public class StaticFileInfo : IStaticFileInfo {
 	public const String CacheFileExtension = ".csfmcache";
@@ -118,7 +119,7 @@ public class StaticFileInfo : IStaticFileInfo {
 						sfi._physicalPathBrotli = outputFile.FullName;
 						sfi._brotliLength = outputFile.Length;
 						Double reduction = 1D - outputFile.Length / (Double)sfi.Length;
-						sfi._logger.LogInformation("Compressed file {FilePath} with {Compression} in {Time} for a {ReductionPercent:P2} size reduction", sfi._physicalPathUncompressed, CompressionMethod.Brotli, sw.Elapsed, reduction);
+						sfi._logger.LogInformation("Compressed file {FilePath} {OriginalFileSize} with {Compression} to {CompressedFileSize} in {Time} for a {ReductionPercent:P2} size reduction", sfi._physicalPathUncompressed, sfi.Length.ToFileSize(), CompressionMethod.Brotli, outputFile.Length.ToFileSize(), sw.Elapsed, reduction);
 					}
 				}, this, createdCompressed);
 			}
