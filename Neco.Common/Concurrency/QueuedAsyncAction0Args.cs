@@ -13,9 +13,7 @@ public sealed class QueuedAsyncAction0Args : IQueuedAction {
 	#region Implementation of IQueuedAction
 
 	/// <inheritdoc />
-	public Task InvokeAsync() {
-		return _doMe();
-	}
+	public Task InvokeAsync() => _doMe();
 
 	#endregion
 }

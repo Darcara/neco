@@ -6,45 +6,27 @@ using System.Globalization;
 public static class NumericExtensions {
 	#region Int64 clamping
 
-	public static Int32 ToInt32Clamped(this Int64 source) {
-		return source > Int32.MaxValue ? Int32.MaxValue : (source < Int32.MinValue ? Int32.MinValue : (Int32)source);
-	}
+	public static Int32 ToInt32Clamped(this Int64 source) => source > Int32.MaxValue ? Int32.MaxValue : (source < Int32.MinValue ? Int32.MinValue : (Int32)source);
 
-	public static UInt32 ToUInt32Clamped(this UInt64 source) {
-		return source > UInt32.MaxValue ? UInt32.MaxValue : (UInt32)source;
-	}
+	public static UInt32 ToUInt32Clamped(this UInt64 source) => source > UInt32.MaxValue ? UInt32.MaxValue : (UInt32)source;
 
 	#endregion
 
 	#region .ToFileSize
 
-	public static String ToFileSize(this Int16 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this Int16 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this UInt16 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this UInt16 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this Int32 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this Int32 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this UInt32 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this UInt32 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this Int64 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this Int64 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this UInt64 source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this UInt64 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
-	public static String ToFileSize(this Single source, String format = "0.00", Boolean useSiPrefix = false) {
-		return ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
-	}
+	public static String ToFileSize(this Single source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
 	/// <summary>
 	///
@@ -53,7 +35,8 @@ public static class NumericExtensions {
 	/// <param name="format"></param>
 	/// <param name="useSiPrefix">TRUE to devide by 1000 and use kB, MB etc. default=FALSE to devide by 1024 and use kiB, MiB, etc.</param>
 	/// <returns></returns>
-	public static String ToFileSize(this Double bytes, String format = "0.00", Boolean useSiPrefix = false) {
+	public static String ToFileSize(this Double bytes, String? format = "0.00", Boolean useSiPrefix = false) {
+		format ??= "0.00";
 		Double factor = useSiPrefix ? 1000.0 : 1024.0;
 		String i = useSiPrefix ? String.Empty : "i";
 
@@ -98,6 +81,22 @@ public static class NumericExtensions {
 
 	public static Double TB(this Double source) => source * 1000 * 1000 * 1000 * 1000;
 
+	public static Int32 KiB(this Int32 source) => source * 1024;
+
+	public static Int32 MiB(this Int32 source) => source * 1024 * 1024;
+
+	public static Int64 GiB(this Int32 source) => source * 1024 * 1024 * 1024;
+
+	public static Int64 TiB(this Int32 source) => source * 1024 * 1024 * 1024 * 1024;
+
+	public static Int32 KB(this Int32 source) => source * 1000;
+
+	public static Int32 MB(this Int32 source) => source * 1000 * 1000;
+
+	public static Int64 GB(this Int32 source) => source * 1000 * 1000 * 1000;
+
+	public static Int64 TB(this Int32 source) => source * 1000 * 1000 * 1000 * 1000;
+
 	public static Int64 KiB(this Int64 source) => source * 1024;
 
 	public static Int64 MiB(this Int64 source) => source * 1024 * 1024;
@@ -113,6 +112,14 @@ public static class NumericExtensions {
 	public static Int64 GB(this Int64 source) => source * 1000 * 1000 * 1000;
 
 	public static Int64 TB(this Int64 source) => source * 1000 * 1000 * 1000 * 1000;
+
+	public static Int64 SecondsInTicks(this Int32 source) => source * 10_000_000;
+
+	public static Int32 SecondsInMs(this Int32 source) => source * 1000;
+
+	public static Int32 MinutesInMs(this Int32 source) => source * 60 * 1000;
+
+	public static Int32 HoursInMs(this Int32 source) => source * 60 * 60 * 1000;
 
 	#endregion
 }

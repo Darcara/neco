@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
 public class CompressedStaticFilesOptions {
-	private String? _serveOnNotFound = null;
+	private String? _serveOnNotFound;
 
 	/// <summary>
 	/// <para>Use for SPA to serve 'index.html' or similar if requested file does not exist.</para>

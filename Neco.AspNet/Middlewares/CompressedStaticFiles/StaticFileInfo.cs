@@ -95,7 +95,7 @@ public class StaticFileInfo : IStaticFileInfo {
 				}
 
 				actionQueue.Enqueue(async (sfi, outputFile) => {
-					var sw = Stopwatch.StartNew();
+					Stopwatch sw = Stopwatch.StartNew();
 					try {
 						String tempFile = outputFile.FullName + ".tmp";
 						if (File.Exists(tempFile)) {
@@ -104,7 +104,7 @@ public class StaticFileInfo : IStaticFileInfo {
 
 						await using Stream inputStream = sfi.CreateReadStream(CompressionMethod.None);
 						await using (Stream outputFileStream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan)) {
-							await using Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.Optimal, false);
+							await using Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.SmallestSize, false);
 							await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, sfi.Length, 65536, CancellationToken.None);
 						}
 
@@ -202,9 +202,7 @@ public class StaticFileInfo : IStaticFileInfo {
 	#region Overrides of Object
 
 	/// <inheritdoc />
-	public override String ToString() {
-		return _physicalPathUncompressed;
-	}
+	public override String ToString() => _physicalPathUncompressed;
 
 	#endregion
 }

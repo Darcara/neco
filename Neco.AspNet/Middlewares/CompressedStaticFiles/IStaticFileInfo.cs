@@ -15,7 +15,6 @@ public interface IStaticFileInfo {
 
 	DateTimeOffset LastModified { get; }
 
-	// Task Serve(RequestDelegate next, HttpContext context, CompressionMethod clientRequestedCompression);
 	Task SendFileResponse(HttpContext context, CompressionMethod clientRequestedCompression);
 	Task SendHeaderResponse(HttpResponse response, Int32 statusCode, CompressionMethod clientRequestedCompression);
 	void EnsureCompression(IActionQueue actionQueue, CompressionMethod clientRequestedCompression);

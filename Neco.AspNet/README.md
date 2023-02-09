@@ -15,10 +15,13 @@ Usage:
 
 ```
 
+### RelaxedPhysicalFileProvider 
+This is a [PhysicalFileProvider](https://learn.microsoft.com/dotnet/api/microsoft.extensions.fileproviders.physicalfileprovider?view=dotnet-plat-ext-6.0) that does not require the path to exist during startup. Calls to [Watch](https://learn.microsoft.com/dotnet/api/microsoft.extensions.fileproviders.physicalfileprovider.watch?view=dotnet-plat-ext-6.0) will throw and all requested files will return [NotFound](https://learn.microsoft.com/dotnet/api/microsoft.extensions.fileproviders.notfoundfileinfo?view=dotnet-plat-ext-6.0).  
+
 ToDo:
 
 * [ ] Serve incompressible and NONE-compression files directly
-* [ ] Optionally serve uncompressed file while compressing
+* [x] Optionally serve uncompressed file while compressing
 * [ ] Custom compression cache folder or CacheProvider
 * [ ] GZip Compression
 * [ ] Custom response / cache headers

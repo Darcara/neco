@@ -8,31 +8,26 @@ namespace Neco.Common.ObjectMethodExecutor;
 using System;
 using System.Linq.Expressions;
 
-internal readonly struct CoercedAwaitableInfo
-{
+internal readonly struct CoercedAwaitableInfo {
 	public AwaitableInfo AwaitableInfo { get; }
 	public Expression CoercerExpression { get; }
 	public Type CoercerResultType { get; }
 	public Boolean RequiresCoercion => CoercerExpression != null;
 
-	public CoercedAwaitableInfo(AwaitableInfo awaitableInfo)
-	{
+	public CoercedAwaitableInfo(AwaitableInfo awaitableInfo) {
 		AwaitableInfo = awaitableInfo;
 		CoercerExpression = null;
 		CoercerResultType = null;
 	}
 
-	public CoercedAwaitableInfo(Expression coercerExpression, Type coercerResultType, AwaitableInfo coercedAwaitableInfo)
-	{
+	public CoercedAwaitableInfo(Expression coercerExpression, Type coercerResultType, AwaitableInfo coercedAwaitableInfo) {
 		CoercerExpression = coercerExpression;
 		CoercerResultType = coercerResultType;
 		AwaitableInfo = coercedAwaitableInfo;
 	}
 
-	public static Boolean IsTypeAwaitable(Type type, out CoercedAwaitableInfo info)
-	{
-		if (AwaitableInfo.IsTypeAwaitable(type, out var directlyAwaitableInfo))
-		{
+	public static Boolean IsTypeAwaitable(Type type, out CoercedAwaitableInfo info) {
+		if (AwaitableInfo.IsTypeAwaitable(type, out AwaitableInfo directlyAwaitableInfo)) {
 			info = new CoercedAwaitableInfo(directlyAwaitableInfo);
 			return true;
 		}
@@ -40,11 +35,9 @@ internal readonly struct CoercedAwaitableInfo
 		// It's not directly awaitable, but maybe we can coerce it.
 		// Currently we support coercing FSharpAsync<T>.
 		if (ObjectMethodExecutorFSharpSupport.TryBuildCoercerFromFSharpAsyncToAwaitable(type,
-			    out var coercerExpression,
-			    out var coercerResultType))
-		{
-			if (AwaitableInfo.IsTypeAwaitable(coercerResultType, out var coercedAwaitableInfo))
-			{
+			    out Expression coercerExpression,
+			    out Type coercerResultType)) {
+			if (AwaitableInfo.IsTypeAwaitable(coercerResultType, out AwaitableInfo coercedAwaitableInfo)) {
 				info = new CoercedAwaitableInfo(coercerExpression, coercerResultType, coercedAwaitableInfo);
 				return true;
 			}

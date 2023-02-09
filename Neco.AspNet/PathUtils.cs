@@ -17,13 +17,9 @@ internal static class PathUtils {
 
 	private static readonly Char[] _pathSeparators = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
-	internal static Boolean HasInvalidPathChars(String path) {
-		return path.IndexOfAny(_invalidFileNameChars) != -1;
-	}
+	internal static Boolean HasInvalidPathChars(String path) => path.IndexOfAny(_invalidFileNameChars) != -1;
 
-	internal static Boolean HasInvalidFilterChars(String path) {
-		return path.IndexOfAny(_invalidFilterChars) != -1;
-	}
+	internal static Boolean HasInvalidFilterChars(String path) => path.IndexOfAny(_invalidFilterChars) != -1;
 
 	internal static String EnsureTrailingSlash(String path) {
 		if (!String.IsNullOrEmpty(path) &&
@@ -35,7 +31,7 @@ internal static class PathUtils {
 	}
 
 	internal static Boolean PathNavigatesAboveRoot(String path) {
-		var tokenizer = new StringTokenizer(path, _pathSeparators);
+		StringTokenizer tokenizer = new(path, _pathSeparators);
 		Int32 depth = 0;
 
 		foreach (StringSegment segment in tokenizer) {

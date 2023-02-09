@@ -24,7 +24,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 		ILogger<SimpleActionQueue> logger = queue._logger;
 		await Task.Delay(100);
 		await foreach (IQueuedAction queuedTask in reader.ReadAllAsync()) {
-			var sw = Stopwatch.StartNew();
+			Stopwatch sw = Stopwatch.StartNew();
 			try {
 				await queuedTask.InvokeAsync();
 			}

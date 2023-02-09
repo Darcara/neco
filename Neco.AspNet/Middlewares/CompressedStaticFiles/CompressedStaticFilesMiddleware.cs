@@ -16,7 +16,7 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Neco.Common.Concurrency;
 
-// TODO FileGetSTatistics and MostUsedMemoryCache(100Mib?)
+// TODO FileGetSTatistics
 public class CompressedStaticFilesMiddleware {
 	private readonly RequestDelegate _next;
 	private readonly ILoggerFactory _loggerFactory;
@@ -33,7 +33,7 @@ public class CompressedStaticFilesMiddleware {
 		_logger = loggerFactory.CreateLogger<CompressedStaticFilesMiddleware>();
 		_options = options.Value ?? throw new ArgumentNullException(nameof(options));
 		_contentTypeProvider = _options.ContentTypeProvider ?? new FileExtensionContentTypeProvider();
-		_fileProvider = _options.FileProvider ?? (hostingEnv.WebRootFileProvider != null ? hostingEnv.WebRootFileProvider : throw new InvalidOperationException($"Missing {nameof(_options.FileProvider)}."));
+		_fileProvider = _options.FileProvider ?? hostingEnv.WebRootFileProvider ?? throw new InvalidOperationException($"Missing {nameof(_options.FileProvider)}.");
 		_actionQueue = actionQueue ?? new SimpleActionQueue(loggerFactory.CreateLogger<SimpleActionQueue>());
 	}
 
@@ -85,6 +85,7 @@ public class CompressedStaticFilesMiddleware {
 
 		_logger.LogTrace("Serving {Path} from {FilePath}", remainingRequestPath, fileInfo);
 		RequestHeaders requestHeaders = request.GetTypedHeaders();
+		IHeaderDictionary headers = request.Headers;
 
 		// 14.24 If-Match
 		IList<EntityTagHeaderValue>? ifMatch = requestHeaders.IfMatch;
@@ -100,26 +101,17 @@ public class CompressedStaticFilesMiddleware {
 		}
 
 		// 14.26 If-None-Match
-		IList<EntityTagHeaderValue>? ifNoneMatch = requestHeaders.IfNoneMatch;
-		if (ifNoneMatch?.Count > 0) {
-			for (Int32 index = 0; index < ifNoneMatch.Count; index++) {
-				EntityTagHeaderValue etag = ifNoneMatch[index];
-				if (etag.Equals(EntityTagHeaderValue.Any) || etag.Compare(fileInfo.Etag, true)) {
-					return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
-				}
-			}
-
-			return fileInfo.SendFileResponse(context, clientRequestedCompression);
+		switch (CommonHttpOperations.IfNoneMatch(headers, fileInfo.Etag)) {
+			case NotModifiedResult.NotModified: return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
+			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression);
 		}
 
 		DateTimeOffset now = DateTimeOffset.UtcNow;
 
 		// 14.25 If-Modified-Since
-		DateTimeOffset? ifModifiedSince = requestHeaders.IfModifiedSince;
-		if (ifModifiedSince <= now) {
-			if (ifModifiedSince < fileInfo.LastModified)
-				return fileInfo.SendFileResponse(context, clientRequestedCompression);
-			return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
+		switch (CommonHttpOperations.IfModifiedSince(headers, fileInfo.LastModified)) {
+			case NotModifiedResult.NotModified: return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
+			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression);
 		}
 
 		// 14.28 If-Unmodified-Since
@@ -151,6 +143,7 @@ public class CompressedStaticFilesMiddleware {
 		if (_options.ServeOnNotFound != null && TryGetFileInfoActual(_options.ServeOnNotFound, out fileInfo)) return true;
 		return false;
 	}
+
 	private Boolean TryGetFileInfoActual(String path, [NotNullWhen(true)] out IStaticFileInfo? fileInfo) {
 		if (_knownStaticFiles.TryGetValue(path, out fileInfo)) return true;
 
