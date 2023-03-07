@@ -6,10 +6,15 @@ namespace Neco.Common.ObjectMethodExecutor;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
-public class ObjectMethodExecutor {
+[RequiresUnreferencedCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
+#if NET7_0_OR_GREATER
+[RequiresDynamicCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
+#endif
+public sealed class ObjectMethodExecutor {
 	private readonly Object?[]? _parameterDefaultValues;
 	private readonly MethodExecutorAsync? _executorAsync;
 	private readonly MethodExecutor? _executor;
@@ -283,7 +288,7 @@ public class ObjectMethodExecutor {
 				unsafeOnCompletedParam2).Compile();
 		}
 
-	// return new ObjectMethodExecutorAwaitable(
+		// return new ObjectMethodExecutorAwaitable(
 		//     (object)coercedMethodCall,
 		//     getAwaiterFunc,
 		//     isCompletedFunc,
