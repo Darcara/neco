@@ -67,7 +67,7 @@ public class RelaxedPhysicalFileProviderTests {
 		changeToken = fileProvider.Watch("*");
 		Assert.That(changeToken, Is.Not.Null);
 		Assert.That(changeToken.HasChanged, Is.False);
-		using var fs = File.Create("./TestData/deleteme", 1 , FileOptions.DeleteOnClose);
+		using FileStream? fs = File.Create("./TestData/deleteme", 1 , FileOptions.DeleteOnClose);
 		fs.WriteByte(1);
 		fs.Flush();
 		Assert.That(() => changeToken.HasChanged, Is.True.After(100, 15));

@@ -1,7 +1,10 @@
 ﻿namespace Neco.Test.Common.Data.Hash;
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
 using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
@@ -89,6 +92,29 @@ public class WyHashFinal3Tests : AHashTest {
 		TestHashFunc(_testCases, () => new WyHashFinal3());
 	}
 
+	[Test]
+	public void HashSeed() {
+		Span<UInt64> secret = new UInt64[4].AsSpan();
+		WyHashFinal3.MakeSecret(0x1234, secret);
+		String oneOffWithSeed = WyHashFinal3.HashOneOff("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"u8, 0x5678, new WyHashSecret(secret)).ToStringHexSingleLine();
+		Assert.That(oneOffWithSeed, Is.EqualTo("CE8DB201D959DFEA"));
+	}
+
+	[Test]
+	public void SecretConstructsCorrectlry() {
+		Span<UInt64> secret = new UInt64[4].AsSpan();
+		WyHashFinal3.MakeSecret(0x1234, secret);
+		WyHashSecret s1 = new WyHashSecret(secret);
+		WyHashSecret s2 = new WyHashSecret(secret[0], secret[1], secret[2], secret[3]);
+		WyHashSecret s = new WyHashSecret();
+
+		Assert.That(s1, Is.EqualTo(s2));
+		Assert.That(s2 == s1, Is.True);
+		Assert.That(s1 != s, Is.True);
+		Assert.That(s1.GetHashCode(), Is.EqualTo(s2.GetHashCode()));
+		Assert.That(s1.GetHashCode(), Is.Not.EqualTo(s.GetHashCode()));
+	}
+
 	private static Object[] _wyHashFinal3TestCases = {
 		// https://github.com/wangyi-fudan/wyhash/blob/master/test_vector.cpp
 		new Object[] { "D3C4EEC56D98BC42", "", 0UL }, // 0
@@ -121,8 +147,25 @@ public class WyHashFinal3Tests : AHashTest {
 	public void HashAllAtOnce(String expected, String data, UInt64 seed = 0) {
 		Byte[] bytes = Encoding.ASCII.GetBytes(data);
 
+		UInt64 longHash = WyHashFinal3.HashOneOffLong(bytes, seed);
+		Assert.That(longHash, Is.EqualTo(BinaryPrimitives.ReverseEndianness(UInt64.Parse(expected, NumberStyles.HexNumber))), "HashOneLong must be equal to HashAlgorithm");
+
 		String oneOffHash = WyHashFinal3.HashOneOff(bytes, seed).ToStringHexSingleLine();
 		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
+
+		oneOffHash = WyHashFinal3.HashOneOff(bytes, 0, bytes.Length, seed).ToStringHexSingleLine();
+		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
+
+		Byte[] hashBytes = new Byte[sizeof(UInt64)];
+		WyHashFinal3.HashOneOff(bytes, hashBytes, seed);
+		oneOffHash = hashBytes.ToStringHexSingleLine();
+		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
+
+		hashBytes = new Byte[sizeof(UInt64)];
+		WyHashFinal3.HashOneOff(bytes, 0, bytes.Length, hashBytes, seed);
+		oneOffHash = hashBytes.ToStringHexSingleLine();
+		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
+
 		TestAllAtOnce(expected, bytes, () => new WyHashFinal3(seed));
 	}
 
@@ -132,7 +175,7 @@ public class WyHashFinal3Tests : AHashTest {
 
 		String oneOffHash = WyHashFinal3.HashOneOff(bytes, seed).ToStringHexSingleLine();
 		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
-		
+
 		Byte[] testArray = new Byte[64];
 		Random.Shared.NextBytes(testArray);
 

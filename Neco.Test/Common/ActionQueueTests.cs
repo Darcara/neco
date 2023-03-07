@@ -84,7 +84,7 @@ public class ActionQueueTests : ATest {
 		Int32 numUncaughtExceptions = 0;
 		TaskScheduler.UnobservedTaskException += (_, _) => numUncaughtExceptions += 1;
 
-		var loggerMock = new LoggerMock<SimpleActionQueue>(GetLogger<SimpleActionQueue>());
+		LoggerMock<SimpleActionQueue>? loggerMock = new LoggerMock<SimpleActionQueue>(GetLogger<SimpleActionQueue>());
 		using SimpleActionQueue aq = new(loggerMock);
 		Int32 i = 0;
 		aq.Enqueue((Action)(() => {

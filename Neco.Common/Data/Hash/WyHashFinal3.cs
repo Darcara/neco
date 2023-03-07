@@ -28,6 +28,14 @@ public readonly struct WyHashSecret {
 		Item3 = item3;
 	}
 
+	public WyHashSecret(ReadOnlySpan<UInt64> seedItems) {
+		Debug.Assert(seedItems.Length == 4);
+		Item0 = seedItems[0];
+		Item1 = seedItems[1];
+		Item2 = seedItems[2];
+		Item3 = seedItems[3];
+	}
+
 	#region Equality members
 
 	public Boolean Equals(WyHashSecret other) => Item0 == other.Item0 && Item1 == other.Item1 && Item2 == other.Item2 && Item3 == other.Item3;
@@ -55,9 +63,11 @@ public readonly struct WyHashSecret {
 
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
 public unsafe class WyHashFinal3 : HashAlgorithm {
+	private static readonly Byte[] _seedLookupBytes = { 15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240 };
+	private static readonly UInt64 _seedLookupBytesLength = (UInt64)_seedLookupBytes.Length;
+
 	private readonly UInt64 _originalSeed;
 	private readonly WyHashSecret _originalSecret;
-
 	private readonly Byte[] _state = GC.AllocateUninitializedArray<Byte>(64, true);
 	private UInt64 _stateSeed, _stateSee1, _stateSee2;
 	private Int32 _byteBuffered;
@@ -81,14 +91,12 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 
 	public static void MakeSecret(UInt64 seed, Span<UInt64> secret) {
 		Debug.Assert(secret.Length == 4);
-		Byte[] c = { 15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240 };
-		UInt64 cLength = (UInt64)c.Length;
 		for (Int32 i = 0; i < 4; i++) {
 			Boolean ok;
 			do {
 				ok = true;
 				secret[i] = 0;
-				for (Int32 j = 0; j < 64; j += 8) secret[i] |= ((UInt64)c[_wyrand(&seed) % cLength]) << j;
+				for (Int32 j = 0; j < 64; j += 8) secret[i] |= ((UInt64)_seedLookupBytes[_wyrand(&seed) % _seedLookupBytesLength]) << j;
 				if (secret[i] % 2 == 0) {
 					ok = false;
 					continue;
@@ -232,6 +240,9 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 		}
 	}
 
+	/// <summary>
+	/// Hashes the data into an unsigned long. Beware of endianess if comparing with <see cref="HashOneOff(System.ReadOnlySpan{byte},ulong,System.Nullable{Neco.Common.Data.Hash.WyHashSecret})">HashOneOff</see>
+	/// </summary>
 	public static UInt64 HashOneOffLong(ReadOnlySpan<Byte> data, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		fixed (Byte* ptr = data) {
 			return _wyhash(ptr, (UInt64)data.Length, seed, secret ?? new WyHashSecret());
@@ -354,14 +365,12 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 
 	#endregion
 
-	/*
-		// With old Bmi2.X64.MultiplyNoFlags
-		wyhash-64-final3 44,282,796 ops in 5,000.001ms = clean per operation: 0.081µs or 12,415,099.974op/s with GC 0/0/0
-		wyhash-64-final3 TotalCPUTime per operation: 5,000.000ms or clean 12,415,102.062op/s for a factor of 1.000
-		// With Math.BigMul Implementation:
-		wyhash-64-final3 45,014,739 ops in 5,000.001ms = clean per operation: 0.079µs or 12,696,560.045op/s with GC 0/0/0
-		wyhash-64-final3 TotalCPUTime per operation: 5,000.000ms or clean 12,696,561.835op/s for a factor of 1.000
-	 */
+	/// <para>With old Bmi2.X64.MultiplyNoFlags<br/>
+	/// wyhash-64-final3 44,282,796 ops in 5,000.001ms = clean per operation: 0.081µs or 12,415,099.974op/s with GC 0/0/0<br/>
+	/// wyhash-64-final3 TotalCPUTime per operation: 5,000.000ms or clean 12,415,102.062op/s for a factor of 1.000</para>
+	/// <para>With Math.BigMul Implementation:<br/>
+	/// wyhash-64-final3 45,014,739 ops in 5,000.001ms = clean per operation: 0.079µs or 12,696,560.045op/s with GC 0/0/0<br/>
+	/// wyhash-64-final3 TotalCPUTime per operation: 5,000.000ms or clean 12,696,561.835op/s for a factor of 1.000</para>
 	public static void PerfTest() {
 		Byte[] hashme = GC.AllocateUninitializedArray<Byte>(1024, true);
 		Byte[] hash = GC.AllocateUninitializedArray<Byte>(8, true);
