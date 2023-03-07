@@ -25,19 +25,18 @@ public class ObjectMethodExecutor {
 		})!;
 
 	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo targetTypeInfo, Object?[]? parameterDefaultValues) {
-		if (methodInfo == null) {
-			throw new ArgumentNullException(nameof(methodInfo));
-		}
+		ArgumentNullException.ThrowIfNull(methodInfo);
 
 		MethodInfo = methodInfo;
 		MethodParameters = methodInfo.GetParameters();
 		TargetTypeInfo = targetTypeInfo;
 		MethodReturnType = methodInfo.ReturnType;
 
-		Boolean isAwaitable = CoercedAwaitableInfo.IsTypeAwaitable(MethodReturnType, out CoercedAwaitableInfo coercedAwaitableInfo);
+		// Boolean isAwaitable = CoercedAwaitableInfo.IsTypeAwaitable(MethodReturnType, out CoercedAwaitableInfo coercedAwaitableInfo);
+		Boolean isAwaitable = AwaitableInfo.IsTypeAwaitable(MethodReturnType, out AwaitableInfo awaitableInfo);
 
 		IsMethodAsync = isAwaitable;
-		AsyncResultType = isAwaitable ? coercedAwaitableInfo.AwaitableInfo.ResultType : null;
+		AsyncResultType = isAwaitable ? awaitableInfo.ResultType : null;
 
 		// Upstream code may prefer to use the sync-executor even for async methods, because if it knows
 		// that the result is a specific Task<T> where T is known, then it can directly cast to that type
@@ -45,7 +44,7 @@ public class ObjectMethodExecutor {
 		_executor = GetExecutor(methodInfo, targetTypeInfo);
 
 		if (IsMethodAsync) {
-			_executorAsync = GetExecutorAsync(methodInfo, targetTypeInfo, coercedAwaitableInfo);
+			_executorAsync = GetExecutorAsync(methodInfo, targetTypeInfo, awaitableInfo);
 		}
 
 		_parameterDefaultValues = parameterDefaultValues;
@@ -73,9 +72,7 @@ public class ObjectMethodExecutor {
 	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo) => new(methodInfo, targetTypeInfo, Array.Empty<Object>());
 
 	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo, Object?[] parameterDefaultValues) {
-		if (parameterDefaultValues == null) {
-			throw new ArgumentNullException(nameof(parameterDefaultValues));
-		}
+		ArgumentNullException.ThrowIfNull(parameterDefaultValues);
 
 		return new ObjectMethodExecutor(methodInfo, targetTypeInfo, parameterDefaultValues);
 	}
@@ -182,7 +179,7 @@ public class ObjectMethodExecutor {
 	private static MethodExecutorAsync GetExecutorAsync(
 		MethodInfo methodInfo,
 		TypeInfo targetTypeInfo,
-		CoercedAwaitableInfo coercedAwaitableInfo) {
+		AwaitableInfo awaitableInfo) {
 		// Parameters to executor
 		ParameterExpression targetParameter = Expression.Parameter(typeof(Object), "target");
 		ParameterExpression parametersParameter = Expression.Parameter(typeof(Object[]), "parameters");
@@ -211,8 +208,7 @@ public class ObjectMethodExecutor {
 		// var getAwaiterFunc = (object awaitable) =>
 		//     (object)((CustomAwaitableType)awaitable).GetAwaiter();
 		ParameterExpression customAwaitableParam = Expression.Parameter(typeof(Object), "awaitable");
-		AwaitableInfo awaitableInfo = coercedAwaitableInfo.AwaitableInfo;
-		Type postCoercionMethodReturnType = coercedAwaitableInfo.CoercerResultType ?? methodInfo.ReturnType;
+		Type postCoercionMethodReturnType = methodInfo.ReturnType;
 		Func<Object, Object> getAwaiterFunc = Expression.Lambda<Func<Object, Object>>(
 			Expression.Convert(
 				Expression.Call(
@@ -287,13 +283,7 @@ public class ObjectMethodExecutor {
 				unsafeOnCompletedParam2).Compile();
 		}
 
-		// If we need to pass the method call result through a coercer function to get an
-		// awaitable, then do so.
-		Expression coercedMethodCall = coercedAwaitableInfo.RequiresCoercion
-			? Expression.Invoke(coercedAwaitableInfo.CoercerExpression, methodCall)
-			: (Expression)methodCall;
-
-		// return new ObjectMethodExecutorAwaitable(
+	// return new ObjectMethodExecutorAwaitable(
 		//     (object)coercedMethodCall,
 		//     getAwaiterFunc,
 		//     isCompletedFunc,
@@ -302,7 +292,7 @@ public class ObjectMethodExecutor {
 		//     unsafeOnCompletedFunc);
 		NewExpression returnValueExpression = Expression.New(
 			_objectMethodExecutorAwaitableConstructor,
-			Expression.Convert(coercedMethodCall, typeof(Object)),
+			Expression.Convert(methodCall, typeof(Object)),
 			Expression.Constant(getAwaiterFunc),
 			Expression.Constant(isCompletedFunc),
 			Expression.Constant(getResultFunc),
