@@ -52,4 +52,14 @@ public static partial class TypeExtensions {
 		Type attributeType = typeof(T);
 		return type.GetCustomAttributes(attributeType, true).Union(type.GetInterfaces().SelectMany(interfaceType => interfaceType.GetCustomAttributes(attributeType, true))).Cast<T>();
 	}
+
+	/// <summary>
+	/// <para>Returns the custom attributes including attributes from implemented interfaces for the given method.</para>
+	/// <para>If the same attribute is defined in multiple locations, it will be contained multiple times</para>
+	/// </summary>
+	public static IEnumerable<Attribute> GetCustomAttributesIncludingBaseInterfaces(this MemberInfo mi, String fullAttributeTypeName) {
+		return mi
+			.GetCustomAttributesIncludingBaseInterfaces(typeof(Attribute))
+			.Where(attribute => String.Equals(fullAttributeTypeName, attribute.GetType().GetFullName()) || String.Equals(fullAttributeTypeName, attribute.GetType().GetFullGenericName()));
+	}
 }
