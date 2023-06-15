@@ -4,11 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// The type extensions.
 /// </summary>
 public static partial class TypeExtensions {
+	[GeneratedRegex("(`\\d+)|(\\[.*\\]$)")]
+	private static partial Regex GenericTypeNameRegex();
+
 	/// <summary>
 	/// <para>Returns the correct name (without namespace) of the type.</para>
 	/// <para>For generic types the name will be the name of the type without a generic hint</para>
@@ -20,7 +24,7 @@ public static partial class TypeExtensions {
 			return "null";
 		if (!t.IsGenericType)
 			return t.Name;
-		return t.Name.Substring(0, t.Name.IndexOf("`", StringComparison.Ordinal));
+		return CleanName(t.Name);
 	}
 
 	/// <summary>
@@ -33,7 +37,14 @@ public static partial class TypeExtensions {
 		if (t == null)
 			return "null";
 		if (!t.IsGenericType)
-			return t.FullName!;
+			return t.FullName ?? t.GetName();
+
+		if (t.IsNested)
+			return GetCleanNestedFullName(t, false);
+
+		if (!String.IsNullOrEmpty(t.Namespace) && !String.IsNullOrEmpty(t.FullName))
+			return CleanName(t.FullName);
+
 		return t.Namespace + "." + t.GetName();
 	}
 
@@ -50,13 +61,7 @@ public static partial class TypeExtensions {
 			return "null";
 		if (!t.IsGenericType)
 			return t.Name;
-		String safeName = t.Name.Substring(0, t.Name.IndexOf("`", StringComparison.Ordinal));
-
-		Type[] genericTypeArguments = t.GenericTypeArguments;
-		if (genericTypeArguments.Length == 0)
-			return safeName;
-
-		return $"{safeName}{lp}{String.Join(",", genericTypeArguments.WhereNotNull().Select(ta => ta.GetGenericName()))}{rp}";
+		return CleanNameGeneric(t.Name, lp, rp, t);
 	}
 
 	/// <summary>
@@ -71,7 +76,44 @@ public static partial class TypeExtensions {
 
 		if (!t.IsGenericType)
 			return t.GetFullName();
+
+		if (t.IsNested)
+			return GetCleanNestedFullName(t, true);
+
+		if (!String.IsNullOrEmpty(t.Namespace) && !String.IsNullOrEmpty(t.FullName))
+			return t.Namespace + "." + CleanNameGeneric(t.FullName.Substring(t.Namespace.Length + 1), "<", ">", t);
+
 		return t.Namespace + "." + t.GetGenericName();
+	}
+
+	private static String CleanName(String s) {
+		// Fullname for lambdas is Some.Namespace.ClassName`1+NestedClass`1+<>c__DisplayClass9_0
+		// Name is '<>c__DisplayClass9_0' and it might be generic
+		var idxGenericMark = s.IndexOf('`', StringComparison.Ordinal);
+		if (idxGenericMark == -1)
+			return s;
+		return s.Substring(0, idxGenericMark);
+	}
+
+	private static String CleanNameGeneric(String s, String lp, String rp, Type t) {
+		// Fullname for lambdas is Some.Namespace.ClassName`1+NestedClass`1+<>c__DisplayClass9_0
+		// Name is '<>c__DisplayClass9_0' and it might be generic
+		String cleanName = CleanName(s);
+		Type[] genericTypeArguments = t.GenericTypeArguments;
+		if (genericTypeArguments.Length == 0)
+			return cleanName;
+		return $"{cleanName}{lp}{String.Join(",", genericTypeArguments.WhereNotNull().Select(ta => ta.GetGenericName()))}{rp}";
+	}
+
+	private static String GetCleanNestedFullName(Type t, Boolean includeTypeParams) {
+		String s = t.FullName ?? t.Name;
+		String cleanName = GenericTypeNameRegex().Replace(s, "");
+		if (!includeTypeParams) return cleanName;
+
+		Type[] genericTypeArguments = t.GenericTypeArguments;
+		if (genericTypeArguments.Length == 0)
+			return cleanName;
+		return $"{cleanName}<{String.Join(",", genericTypeArguments.WhereNotNull().Select(ta => ta.GetGenericName()))}>";
 	}
 
 	/// <summary>
@@ -100,6 +142,25 @@ public static partial class TypeExtensions {
 				}
 
 				if (possibleMatch.ImplementsInterface(ifaceType))
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static Boolean ImplementsInterface(this Type t, String ifaceTypeFullName) {
+		if (String.Equals(t.GetFullName(), ifaceTypeFullName, StringComparison.Ordinal) || String.Equals(t.GetFullGenericName(), ifaceTypeFullName, StringComparison.Ordinal))
+			return true;
+
+		for (Type? type = t; type != null; type = type.BaseType) {
+			Type[] interfaces = type.GetInterfaces();
+			for (Int32 index = 0; index < interfaces.Length; ++index) {
+				Type possibleMatch = interfaces[index];
+				if (String.Equals(possibleMatch.GetFullName(), ifaceTypeFullName, StringComparison.Ordinal) || String.Equals(possibleMatch.GetFullGenericName(), ifaceTypeFullName, StringComparison.Ordinal))
+					return true;
+
+				if (possibleMatch.ImplementsInterface(ifaceTypeFullName))
 					return true;
 			}
 		}

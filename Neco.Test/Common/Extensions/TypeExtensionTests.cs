@@ -21,6 +21,28 @@ public class TypeExtensionTests {
 		Assert.That(typeof(TypeExtensionTests).GetGenericName(), Is.EqualTo("TypeExtensionTests"));
 		Assert.That(typeof(TypeExtensionTests).GetFullGenericName(), Is.EqualTo("Neco.Test.Common.Extensions.TypeExtensionTests"));
 
+		Assert.That(typeof(ImplementingClass).GetName(), Is.EqualTo("ImplementingClass"));
+		Assert.That(typeof(ImplementingClass).GetFullName(), Is.EqualTo("Neco.Test.Common.Extensions.TypeExtensionTests+ImplementingClass"));
+		Assert.That(typeof(ImplementingClass).GetGenericName(), Is.EqualTo("ImplementingClass"));
+		Assert.That(typeof(ImplementingClass).GetFullGenericName(), Is.EqualTo("Neco.Test.Common.Extensions.TypeExtensionTests+ImplementingClass"));
+
+		Assert.That(typeof(ABaseClass<String>).GetName(), Is.EqualTo("ABaseClass"));
+		Assert.That(typeof(ABaseClass<String>).GetFullName(), Is.EqualTo("Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass"));
+		Assert.That(typeof(ABaseClass<String>).GetGenericName(), Is.EqualTo("ABaseClass<String>"));
+		Assert.That(typeof(ABaseClass<String>).GetFullGenericName(), Is.EqualTo("Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass<String>"));
+
+		// Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass`1+NestedClass`1+<>c__DisplayClass0_0
+		Type nestedLambdaTypeRaw = typeof(TypeExtensionTests).Assembly.GetTypes().Single(t => t.FullName.StartsWith("Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass`1+NestedClass`1+<>c__DisplayClass", StringComparison.Ordinal));
+		Type nestedLambdaType = nestedLambdaTypeRaw.MakeGenericType(typeof(String), typeof(Int32));
+		Assert.Multiple(() => {
+			StringAssert.StartsWith("<>c__DisplayClass", nestedLambdaType.GetName());
+			StringAssert.StartsWith("Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass+NestedClass+<>c__DisplayClass",nestedLambdaType.GetFullName());
+			StringAssert.StartsWith("<>c__DisplayClass",nestedLambdaType.GetGenericName());
+			StringAssert.EndsWith("<String,Int32>",nestedLambdaType.GetGenericName());
+			StringAssert.StartsWith("Neco.Test.Common.Extensions.TypeExtensionTests+ABaseClass+NestedClass+<>c__DisplayClass", nestedLambdaType.GetFullGenericName());
+			StringAssert.EndsWith("<String,Int32>",nestedLambdaType.GetFullGenericName());
+		});
+
 		Assert.That(((Type?)null).GetName(), Is.EqualTo("null"));
 		Assert.That(((Type?)null).GetFullName(), Is.EqualTo("null"));
 		Assert.That(((Type?)null).GetGenericName(), Is.EqualTo("null"));
@@ -66,6 +88,13 @@ public class TypeExtensionTests {
 		public abstract Boolean Equals(T? other);
 
 		#endregion
+
+		private class NestedClass<TS> {
+			protected T? MethodWithLambda(T someT, TS someS) {
+				HashSet<T> someSet = new();
+				return someSet.FirstOrDefault(s => s.Equals(someT) || s.Equals(someS));
+			}
+		}
 	}
 
 	private sealed class ImplementingClass : ABaseClass<String> {
