@@ -8,6 +8,7 @@ public class BaseContext {
 	public Dictionary<Object, Object> Features { get; } = new();
 
 	public void SetData<TKeyAndData>(TKeyAndData data) where TKeyAndData : notnull => SetData(typeof(TKeyAndData), data);
+
 	public void SetData<TKey, TData>(TKey key, TData data) where TKey : notnull {
 		ArgumentNullException.ThrowIfNull(key, nameof(key));
 		ArgumentNullException.ThrowIfNull(data, nameof(key));
@@ -22,6 +23,11 @@ public class BaseContext {
 	public TData GetData<TKey, TData>(TKey key) where TKey : notnull {
 		ArgumentNullException.ThrowIfNull(key, nameof(key));
 		return (TData)Features[key];
+	}
+
+	public TKeyAndData GetData<TKeyAndData>(TKeyAndData key) where TKeyAndData : notnull {
+		ArgumentNullException.ThrowIfNull(key, nameof(key));
+		return (TKeyAndData)Features[key];
 	}
 
 	public TData? GetDataOrDefault<TKey, TData>(TKey key) where TKey : notnull {
