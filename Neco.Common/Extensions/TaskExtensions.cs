@@ -1,6 +1,7 @@
 namespace Neco.Common.Extensions;
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,5 +36,30 @@ public static class TaskExtensions {
 		}
 
 		throw new TimeoutException();
+	}
+	
+	// see: https://stackoverflow.com/questions/72715689/valuetask-instances-should-not-have-their-result-directly-accessed-unless-the-in/72716573#72716573
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void GetResultBlocking(this in ValueTask valueTask)
+	{
+		if (valueTask.IsCompletedSuccessfully)
+		{
+			valueTask.GetAwaiter().GetResult();
+			return;
+		}
+
+		valueTask.AsTask().GetAwaiter().GetResult();
+	}
+	
+	// see: https://stackoverflow.com/questions/72715689/valuetask-instances-should-not-have-their-result-directly-accessed-unless-the-in/72716573#72716573
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static T GetResultBlocking<T>(this in ValueTask<T> valueTask)
+	{
+		if (valueTask.IsCompletedSuccessfully)
+		{
+			return valueTask.GetAwaiter().GetResult();
+		}
+
+		return valueTask.AsTask().GetAwaiter().GetResult();
 	}
 }
