@@ -12,7 +12,7 @@ using System.Text;
 /// All user names and passwords are case sensitive.
 /// </summary>
 /// <remarks>This class is not thread safe</remarks>
-public class AuthFile {
+public class AuthFile : IAuthenticationProvider{
 	/// <summary>
 	/// Characters that are illegal to use in username <see cref="IPasswordHashingFunction"/>.<see cref="IPasswordHashingFunction.Id"/> and 
 	/// </summary>
@@ -184,14 +184,7 @@ public class AuthFile {
 		SaveFile();
 	}
 
-	/// <summary>
-	/// <para>Check if the supplied credentials are correct</para>
-	/// </summary>
-	/// <param name="username">The username to check</param>
-	/// <param name="password">The plaintext passowrd as entered by the user</param>
-	/// <returns><see cref="AuthResult.Failed"/> if the user is not found, the hasher is unkonwn or the hashed password did not match; true otherwise</returns>
-	/// <exception cref="ArgumentException">If <see cref="username"/> is null or empty</exception>
-	/// <exception cref="ArgumentNullException">If <see cref="password"/> is null</exception>
+	/// <inheritdoc />
 	public AuthResult CheckAuth(String username, String password) => CheckAuth(username, password, out Int32 _);
 
 	/// <summary>
