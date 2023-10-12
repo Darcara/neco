@@ -3,6 +3,7 @@ namespace Neco.Test.Common;
 using System;
 using System.Threading;
 using Neco.Common.Data;
+using Neco.Common.Extensions;
 using Neco.Common.Helper;
 using NUnit.Framework;
 
@@ -11,7 +12,7 @@ public class SequentialGuidGeneratorTests {
 	[SetUp]
 	public void BeforeTest() {
 		// WarmUp JIT
-		for (int i = 0; i < 100; i++) SequentialGuidGenerator.CreateSequentialBinary();
+		for (int i = 0; i < 100; i++) SequentialGuidGenerator.CreateSequentialGuid();
 
 		// Wait for clock to advance after current id tick
 		Thread.Sleep(10);
@@ -19,35 +20,25 @@ public class SequentialGuidGeneratorTests {
 
 	[Test]
 	public void GeneratesSequentialGuids() {
-		Guid g1 = SequentialGuidGenerator.CreateSequentialBinary();
-		Guid g2 = SequentialGuidGenerator.CreateSequentialBinary();
+		Guid g1 = SequentialGuidGenerator.CreateSequentialGuid();
+		Thread.Sleep(1);
+		Guid g2 = SequentialGuidGenerator.CreateSequentialGuid();
+		
+		Console.WriteLine($"{g1} -- {g1.ToByteArray().ToStringHexSingleLine(0,4)}-{g1.ToByteArray().ToStringHexSingleLine(4,2)}-{g1.ToByteArray().ToStringHexSingleLine(6)}");
+		Console.WriteLine($"{g2} -- {g2.ToByteArray().ToStringHexSingleLine(0,4)}-{g2.ToByteArray().ToStringHexSingleLine(4,2)}-{g2.ToByteArray().ToStringHexSingleLine(6)}");
 		Assert.That(g2, Is.GreaterThan(g1));
-
-		Assert.That(CompareByteArrays(g1.ToByteArray(), g2.ToByteArray()), Is.Negative);
 	}
-
-	// value less than zero if x is less than y, zero if x is equal to y, or a
-	// value greater than zero if x is greater than y.
-	private Int32 CompareByteArrays(byte[] x, byte[] y) {
-		Assert.That(x.Length, Is.EqualTo(y.Length));
-
-		for (Int32 i = 0; i < x.Length; i++) {
-			if (x[i] < y[i]) return -1;
-			if (x[i] > y[i]) return 1;
-		}
-
-		return 0;
-	}
-
+	
 	[Test]
-	public void CanExtimateTimeFromId() {
+	public void CanEstimateTimeFromId() {
 		DateTime now = DateTime.UtcNow;
-		Guid g1 = SequentialGuidGenerator.CreateSequentialBinary();
+		Guid g1 = SequentialGuidGenerator.CreateSequentialGuid();
 		DateTime idTime = SequentialGuidGenerator.FromSequentialGuid(g1);
 		Console.WriteLine(now.ToString("O"));
 		Console.WriteLine(idTime.ToString("O"));
 		Assert.That(idTime.Kind, Is.EqualTo(DateTimeKind.Utc));
 		Assert.That(idTime - now, Is.GreaterThan(TimeSpan.FromMicroseconds(-20)));
+		Assert.That(idTime - now, Is.InRange(TimeSpan.FromMicroseconds(-20), TimeSpan.FromMicroseconds(20)));
 	}
 	
 	// AMD Ryzen 9 3900X 12-Core Processor
@@ -56,7 +47,7 @@ public class SequentialGuidGeneratorTests {
 	[Test]
 	[Category("Benchmark")]
 	public void RoughGenerationBenchmark() {
-		PerformanceHelper.GetPerformanceRough(nameof(SequentialGuidGenerator.CreateSequentialBinary), () => SequentialGuidGenerator.CreateSequentialBinary());
+		PerformanceHelper.GetPerformanceRough(nameof(SequentialGuidGenerator.CreateSequentialGuid), () => SequentialGuidGenerator.CreateSequentialGuid());
 	}
 	
 	[Test]

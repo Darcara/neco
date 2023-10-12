@@ -24,7 +24,7 @@ public static class SequentialGuidGenerator {
 	/// The returned Guids have an 48Bit timestamp in the beginning, that can be read with <see cref="FromSequentialGuid"/>.
 	/// Since the id time is truncated to 10s of microseconds, the calculated time can be slightly before (max. 20 microseconds) <see cref="DateTime.UtcNow"/>.
 	/// </para>
-	public static Guid CreateSequentialBinary() {
+	public static Guid CreateSequentialGuid() {
 		Guid g = Guid.NewGuid();
 
 		// Since we have 6 bytes / 48 Bits of "time" in out guid we can represent
@@ -46,18 +46,18 @@ public static class SequentialGuidGenerator {
 		Span<Byte> byteSpan = MemoryMarshal.AsBytes(guidSpan);
 
 		// Work directly on GUID
-		byteSpan[0] = (Byte)((ticks >> 40) & 0xFF);
-		byteSpan[1] = (Byte)((ticks >> 32) & 0xFF);
-		byteSpan[2] = (Byte)((ticks >> 24) & 0xFF);
-		byteSpan[3] = (Byte)((ticks >> 16) & 0xFF);
-		byteSpan[4] = (Byte)((ticks >> 8) & 0xFF);
-		byteSpan[5] = (Byte)(ticks & 0xFF);
+		byteSpan[3] = (Byte)((ticks >> 40) & 0xFF);
+		byteSpan[2] = (Byte)((ticks >> 32) & 0xFF);
+		byteSpan[1] = (Byte)((ticks >> 24) & 0xFF);
+		byteSpan[0] = (Byte)((ticks >> 16) & 0xFF);
+		byteSpan[5] = (Byte)((ticks >> 8) & 0xFF);
+		byteSpan[4] = (Byte)(ticks & 0xFF);
 
 		return g;
 	}
 
 	/// <summary>
-	/// Returns the timestamp bit from a <see cref="CreateSequentialBinary"/> generated Guid.
+	/// Returns the timestamp bit from a <see cref="CreateSequentialGuid"/> generated Guid.
 	/// </summary>
 	/// <para>
 	/// Since the id time is truncated to 10s of microseconds, the calculated time can be slightly before (max. 20 microseconds) <see cref="DateTime.UtcNow"/>.
@@ -67,14 +67,19 @@ public static class SequentialGuidGenerator {
 		Span<Byte> byteSpan = MemoryMarshal.AsBytes(guidSpan);
 
 		// Not really ticks but 10s of microseconds, see above
-		Int64 ticksSince2000 = byteSpan[5] | (Int64)byteSpan[4] << 8 | (Int64)byteSpan[3] << 16 | (Int64)byteSpan[2] << 24 | (Int64)byteSpan[1] << 32 | (Int64)byteSpan[0] << 40;
+		Int64 ticksSince2000 = byteSpan[4] | (Int64)byteSpan[5] << 8 | (Int64)byteSpan[0] << 16 | (Int64)byteSpan[1] << 24 | (Int64)byteSpan[2] << 32 | (Int64)byteSpan[3] << 40;
 
 		return new DateTime(ticksSince2000 * 100 + _startOf2000Ticks, DateTimeKind.Utc);
 	}
 
 	public static Byte[] ToMySqlUuid(Guid g) {
 		Byte[] b = g.ToByteArray();
-		for (Int32 i = 0; i < 6; i++) (b[10 + i], b[i]) = (b[i], b[10 + i]);
+		(b[10 + 0], b[3]) = (b[3], b[10 + 0]);
+		(b[10 + 1], b[2]) = (b[2], b[10 + 1]);
+		(b[10 + 2], b[1]) = (b[1], b[10 + 2]);
+		(b[10 + 3], b[0]) = (b[0], b[10 + 3]);
+		(b[10 + 4], b[5]) = (b[5], b[10 + 4]);
+		(b[10 + 5], b[4]) = (b[4], b[10 + 5]);
 		return b;
 	}
 
@@ -83,8 +88,14 @@ public static class SequentialGuidGenerator {
 		// Reinterpret Guid as a Span ob bytes
 		Span<Guid> guidSpan = MemoryMarshal.CreateSpan(ref g, 1);
 		Span<Byte> byteSpan = MemoryMarshal.AsBytes(guidSpan);
+
+		(byteSpan[10 + 0], byteSpan[3]) = (byteSpan[3], byteSpan[10 + 0]);
+		(byteSpan[10 + 1], byteSpan[2]) = (byteSpan[2], byteSpan[10 + 1]);
+		(byteSpan[10 + 2], byteSpan[1]) = (byteSpan[1], byteSpan[10 + 2]);
+		(byteSpan[10 + 3], byteSpan[0]) = (byteSpan[0], byteSpan[10 + 3]);
+		(byteSpan[10 + 4], byteSpan[5]) = (byteSpan[5], byteSpan[10 + 4]);
+		(byteSpan[10 + 5], byteSpan[4]) = (byteSpan[4], byteSpan[10 + 5]);
 		
-		for (Int32 i = 0; i < 6; i++) (byteSpan[10 + i], byteSpan[i]) = (byteSpan[i], byteSpan[10 + i]);
 		return g;
 	}
 }
