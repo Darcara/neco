@@ -40,39 +40,32 @@ public class RateLimitedStream : Stream {
 
 	// Returns 0 if 0 is requested, or if the rate limiter will never issue tokens again
 	private Int32 GetTokens(RateLimiter? rateLimiter, Int32 tokensWanted) {
-		if (rateLimiter == null) return tokensWanted;
-		if (tokensWanted == 0) return 0;
+		if (rateLimiter == null || tokensWanted == 0) return tokensWanted;
 		Int32 tokensToAquire = Math.Min(_blockSize, tokensWanted);
 		using (RateLimitLease lease = rateLimiter.AttemptAcquire(tokensToAquire)) {
-			if (lease.IsAcquired) return tokensWanted;
+			if (lease.IsAcquired) return tokensToAquire;
 			// TODO: use MetadataName.RetryAfter
 		}
 
-		using RateLimitLease asyncLease = rateLimiter.AcquireAsync(tokensWanted, CancellationToken.None).GetResultBlocking();
-		return asyncLease.IsAcquired ? tokensWanted : 0;
+		using RateLimitLease asyncLease = rateLimiter.AcquireAsync(tokensToAquire, CancellationToken.None).GetResultBlocking();
+		return asyncLease.IsAcquired ? tokensToAquire : 0;
 	}
 
 	private ValueTask<Int32> GetTokensAsync(RateLimiter? rateLimiter, Int32 tokensWanted, CancellationToken cancellationToken) {
-		if (rateLimiter == null) return ValueTask.FromResult(tokensWanted);
-		if (tokensWanted == 0) return ValueTask.FromResult(0);
+		if (rateLimiter == null || tokensWanted == 0) return ValueTask.FromResult(tokensWanted);
 		Int32 tokensToAquire = Math.Min(_blockSize, tokensWanted);
 		using (RateLimitLease lease = rateLimiter.AttemptAcquire(tokensToAquire)) {
-			if (lease.IsAcquired) return ValueTask.FromResult(tokensWanted);
-			// TODO: use MetadataName.RetryAfter if available
+			if (lease.IsAcquired) {
+				return ValueTask.FromResult(tokensToAquire);
+			}
 		}
 
-		// Probability is admittedly low, but we try to stay sync as long as possible
-		ValueTask<RateLimitLease> vt = rateLimiter.AcquireAsync(tokensWanted, cancellationToken);
-		if (vt.IsCompletedSuccessfully) {
-			return vt.GetAwaiter().GetResult().IsAcquired ? ValueTask.FromResult(tokensWanted) : ValueTask.FromResult(0);
-		}
-
-		return AwaitAsync(tokensToAquire, vt);
+		return GetTokensAsyncCore(rateLimiter, tokensToAquire, cancellationToken);
 	}
 
-	private static async ValueTask<Int32> AwaitAsync(Int32 bytes, ValueTask<RateLimitLease> vt) {
-		using RateLimitLease asyncLease = await vt.ConfigureAwait(false);
-		return asyncLease.IsAcquired ? bytes : 0;
+	private static async ValueTask<Int32> GetTokensAsyncCore(RateLimiter rateLimiter, Int32 tokensToAquire, CancellationToken cancellationToken) {
+		using RateLimitLease asyncLease = await rateLimiter.AcquireAsync(tokensToAquire, cancellationToken);
+		return asyncLease.IsAcquired ? tokensToAquire : 0;
 	}
 
 	#region Overrides of Stream

@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Moq;
 using Neco.Common.Data;
 using Neco.Common.Extensions;
 using Neco.Test.Mocks;
@@ -34,6 +33,7 @@ public class RateLimitingStreamTests {
 
 	[Test]
 	[SuppressMessage("ReSharper", "MustUseReturnValue")]
+	[SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
 	public void InterfaceTests() {
 		Byte[] buffer = new Byte[1024];
 		(RateLimitedStream stream, TokenBucketRateLimiter rateLimiter) = Create();
@@ -45,6 +45,19 @@ public class RateLimitingStreamTests {
 		stream.ReadAsync(Memory<Byte>.Empty).GetResultBlocking().Should().Be(0);
 		// Requesting 1024 bytes, but only 10 max in rate limiter
 		Assert.Throws<ArgumentOutOfRangeException>(() => stream.Read(buffer));
+		
+		// Read rest of tokens
+		stream.Read(buffer.AsSpan(0, 9));
+		// Queue max read
+		ValueTask<Int32> readTask1 = stream.ReadAsync(buffer.AsMemory(0, 10));
+		readTask1.IsCompletedSuccessfully.Should().BeFalse();
+		// Will fail because QueueLength=10 is exausted
+		ValueTask<Int32> readTask2 = stream.ReadAsync(buffer.AsMemory(0, 10));
+		readTask2.IsCompletedSuccessfully.Should().BeTrue();
+		readTask2.GetAwaiter().GetResult().Should().Be(0);
+		Thread.Sleep(rateLimiter.ReplenishmentPeriod);
+		rateLimiter.TryReplenish();
+		Assert.That(() => readTask1.IsCompletedSuccessfully, Is.True.After(100, 1));
 
 		Assert.DoesNotThrow(() => stream.Flush());
 		Assert.DoesNotThrowAsync(() => stream.FlushAsync());
@@ -59,12 +72,13 @@ public class RateLimitingStreamTests {
 		Assert.Throws<NotSupportedException>(() => stream.EndRead(null!));
 
 		stream.Length.Should().Be(256);
-		stream.Position.Should().Be(1); // we read one byte earlier
+		stream.Position.Should().Be(20); // we read 1+9+10 bytes earlier
 		stream.CanRead.Should().BeTrue();
 		stream.CanWrite.Should().BeTrue();
 		stream.CanSeek.Should().BeTrue();
 		stream.Seek(0, SeekOrigin.Begin);
 		stream.Position.Should().Be(0);
+		rateLimiter.TryReplenish();
 		stream.ReadByte().Should().Be(0);
 		stream.Position.Should().Be(1);
 		stream.Position = 0;
@@ -73,6 +87,10 @@ public class RateLimitingStreamTests {
 		stream.SetLength(64);
 		stream.Length.Should().Be(64);
 
+
+		Assert.Throws<ArgumentNullException>(() => new RateLimitedStream(null!, null));
+		Assert.Throws<ArgumentOutOfRangeException>(() => new RateLimitedStream(stream, null, blockSize:-1));
+		
 		stream.Dispose();
 		rateLimiter.Dispose();
 	}
@@ -230,7 +248,7 @@ public class RateLimitingStreamTests {
 		MemoryStream innerStream = new();
 		innerStream.CanRead.Should().BeTrue();
 
-		RateLimitedStream rs = new(innerStream, null, null, disposeStream: true, disposeReadRateLimiter: true, disposeWriteRateLimiter: true);
+		RateLimitedStream rs = new(innerStream, null, disposeStream: true, disposeReadRateLimiter: true, disposeWriteRateLimiter: true);
 		rs.Dispose();
 		innerStream.CanRead.Should().BeFalse();
 	}
@@ -240,10 +258,10 @@ public class RateLimitingStreamTests {
 		MemoryStream innerStream = new();
 		innerStream.CanRead.Should().BeTrue();
 
-		RateLimitedStream rs = new(innerStream, null, null, disposeStream: true, disposeReadRateLimiter: true, disposeWriteRateLimiter: true);
+		RateLimitedStream rs = new(innerStream, null, disposeStream: true, disposeReadRateLimiter: true, disposeWriteRateLimiter: true);
 		rs.Dispose();
 
-		var readMock = new RateLimiterMock();
+		RateLimiterMock readMock = new();
 
 		rs = new(innerStream, readMock, readMock, disposeStream: true, disposeReadRateLimiter: true, disposeWriteRateLimiter: true);
 		rs.Dispose();
@@ -259,8 +277,8 @@ public class RateLimitingStreamTests {
 		MemoryStream innerStream = new();
 		innerStream.CanRead.Should().BeTrue();
 
-		var readMock = new RateLimiterMock();
-		var writeMock = new RateLimiterMock();
+		RateLimiterMock readMock = new();
+		RateLimiterMock writeMock = new();
 		RateLimitedStream rs = new(innerStream, readMock, writeMock, disposeStream: true, disposeReadRateLimiter: disposeRead, disposeWriteRateLimiter: disposeWrite);
 		rs.Dispose();
 
