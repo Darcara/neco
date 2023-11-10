@@ -3,7 +3,7 @@
 using System;
 using System.Threading.Tasks;
 
-public sealed class QueuedAction0Args : IQueuedAction {
+internal sealed class QueuedAction0Args : IQueuedAction {
 	private readonly Action _doMe;
 
 	public QueuedAction0Args(Action doMe) {

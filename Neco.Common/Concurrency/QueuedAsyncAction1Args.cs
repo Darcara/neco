@@ -3,7 +3,7 @@
 using System;
 using System.Threading.Tasks;
 
-public sealed class QueuedAsyncAction1Args<TArg1> : IQueuedAction {
+internal sealed class QueuedAsyncAction1Args<TArg1> : IQueuedAction {
 	private readonly Func<TArg1, Task> _doMe;
 	private readonly TArg1 _arg1;
 
