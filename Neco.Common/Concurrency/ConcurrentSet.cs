@@ -2,15 +2,16 @@ namespace Neco.Common.Concurrency;
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 [DebuggerDisplay("Count = {Count}")]
 public class ConcurrentSet<T> : ICollection<T>, IReadOnlyCollection<T> where T : notnull {
-	private readonly Dictionary<T, Byte> _store;
+	private readonly ConcurrentDictionary<T, Byte> _store;
 
 	public ConcurrentSet(Int32 capacity=0, IEqualityComparer<T>? comparer = null) {
-		_store = new(capacity, comparer);
+		_store = new ConcurrentDictionary<T, Byte>(Environment.ProcessorCount, capacity, comparer);
 	}
 
 	/// <inheritdoc cref="ISet{T}.Add" />
@@ -45,7 +46,7 @@ public class ConcurrentSet<T> : ICollection<T>, IReadOnlyCollection<T> where T :
 	public void CopyTo(T[] array, Int32 arrayIndex) => _store.Keys.CopyTo(array, arrayIndex);
 
 	/// <inheritdoc />
-	public Boolean Remove(T item) => _store.Remove(item);
+	public Boolean Remove(T item) => _store.Remove(item, out _);
 
 	/// <inheritdoc cref="ICollection{T}.Count" />
 	public Int32 Count => _store.Count;
