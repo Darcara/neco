@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 public sealed class SimpleActionQueue : IActionQueue {
 	private readonly ILogger<SimpleActionQueue> _logger;
-	private readonly Channel<IQueuedAction> _fileInfosToProcess = Channel.CreateUnbounded<IQueuedAction>(new UnboundedChannelOptions() { SingleReader = true, SingleWriter = false });
+	private readonly Channel<IQueuedAction> _queue = Channel.CreateUnbounded<IQueuedAction>(new UnboundedChannelOptions() { SingleReader = true, SingleWriter = false });
 	private Int32 _numberOfItemsQueued;
 	private TaskCompletionSource? _tcs;
 
@@ -20,7 +20,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 
 	private static async Task QueueWorker(Object? state) {
 		SimpleActionQueue queue = state as SimpleActionQueue ?? throw new ArgumentException($"{nameof(QueueWorker)} expected {nameof(state)} to be {nameof(SimpleActionQueue)} but was {state?.GetType().FullName}", nameof(state));
-		ChannelReader<IQueuedAction> reader = queue._fileInfosToProcess;
+		ChannelReader<IQueuedAction> reader = queue._queue;
 		ILogger<SimpleActionQueue> logger = queue._logger;
 		await Task.Delay(100);
 		await foreach (IQueuedAction queuedTask in reader.ReadAllAsync()) {
@@ -36,7 +36,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 
 			Int32 newNumberEnqueued = Interlocked.Decrement(ref queue._numberOfItemsQueued);
 			if (newNumberEnqueued == 0 && queue._tcs != null) {
-				lock (queue._fileInfosToProcess) {
+				lock (queue._queue) {
 					queue._tcs?.TrySetResult();
 					queue._tcs = null;
 				}
@@ -47,7 +47,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 	/// <inheritdoc />
 	public Task WaitUntilEmpty() {
 		if (_numberOfItemsQueued == 0) return Task.CompletedTask;
-		lock (_fileInfosToProcess) {
+		lock (_queue) {
 			_tcs ??= new TaskCompletionSource();
 			return _tcs.Task;
 		}
@@ -56,50 +56,50 @@ public sealed class SimpleActionQueue : IActionQueue {
 	/// <inheritdoc />
 	public void Enqueue(Action doMe) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAction0Args(doMe));
+		_queue.Writer.TryWrite(new QueuedAction0Args(doMe));
 	}
 
 	/// <inheritdoc />
 	public void Enqueue(Func<Task> doMe) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAsyncAction0Args(doMe));
+		_queue.Writer.TryWrite(new QueuedAsyncAction0Args(doMe));
 	}
 
 	/// <inheritdoc />
 	public void Enqueue<TArg1>(Action<TArg1> doMe, TArg1 arg1) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAction1Args<TArg1>(doMe, arg1));
+		_queue.Writer.TryWrite(new QueuedAction1Args<TArg1>(doMe, arg1));
 	}
 
 	/// <inheritdoc />
 	public void Enqueue<TArg1>(Func<TArg1, Task> doMe, TArg1 arg1) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAsyncAction1Args<TArg1>(doMe, arg1));
+		_queue.Writer.TryWrite(new QueuedAsyncAction1Args<TArg1>(doMe, arg1));
 	}
 
 	/// <inheritdoc />
 	public void Enqueue<TArg1, TArg2>(Action<TArg1, TArg2> doMe, TArg1 arg1, TArg2 arg2) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAction2Args<TArg1, TArg2>(doMe, arg1, arg2));
+		_queue.Writer.TryWrite(new QueuedAction2Args<TArg1, TArg2>(doMe, arg1, arg2));
 	}
 
 	/// <inheritdoc />
 	public void Enqueue<TArg1, TArg2>(Func<TArg1, TArg2, Task> doMe, TArg1 arg1, TArg2 arg2) {
 		Interlocked.Increment(ref _numberOfItemsQueued);
-		_fileInfosToProcess.Writer.TryWrite(new QueuedAsyncAction2Args<TArg1, TArg2>(doMe, arg1, arg2));
+		_queue.Writer.TryWrite(new QueuedAsyncAction2Args<TArg1, TArg2>(doMe, arg1, arg2));
 	}
 
 	#region IDisposable
 
 	/// <inheritdoc />
 	public void Dispose() {
-		lock (_fileInfosToProcess) {
+		lock (_queue) {
 			_tcs?.TrySetResult();
 			_tcs = null;
 			_numberOfItemsQueued = 0;
 		}
 
-		_fileInfosToProcess.Writer.TryComplete();
+		_queue.Writer.TryComplete();
 	}
 
 	#endregion
