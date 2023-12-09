@@ -361,9 +361,9 @@ public sealed class Crontab {
 		}
 	}
 
-	public static Boolean operator ==(Crontab left, Crontab right) => Equals(left, right);
+	public static Boolean operator ==(Crontab? left, Crontab? right) => Equals(left, right);
 
-	public static Boolean operator !=(Crontab left, Crontab right) => !Equals(left, right);
+	public static Boolean operator !=(Crontab? left, Crontab? right) => !Equals(left, right);
 
 	#endregion Equality members
 

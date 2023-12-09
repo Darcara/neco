@@ -53,7 +53,7 @@ public class ZeroDataStreamTests {
 		do {
 			bytesRead = s.Read(buffer);
 			Span<byte> trimmed = buffer.AsSpan(0, bytesRead).Trim((Byte)0);
-			Assert.IsTrue(trimmed.Length == 0);
+			trimmed.Length.Should().Be(0);
 			totalBytesRead += bytesRead;
 			++maxReadsCounter;
 		} while (totalBytesRead < numBytes && maxReadsCounter < maxReads && bytesRead > 0);

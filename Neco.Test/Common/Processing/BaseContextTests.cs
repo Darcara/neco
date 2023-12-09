@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using Neco.Common.Helper;
 using Neco.Common.Processing;
 using NUnit.Framework;
@@ -12,7 +13,7 @@ public class BaseContextTests {
 	public void HandlesFeaturesCorrectly() {
 		BaseContext ctx = new();
 		Dictionary<Object, Object>? features = ReflectionHelper.GetFieldOrPropertyValue<Dictionary<Object, Object>>(ctx, "_features");
-		Assert.NotNull(features);
+		features.Should().NotBeNull();
 
 		ctx.SetData("Key", "Data");
 		Assert.That(ctx.GetData<String, String>("Key"), Is.EqualTo("Data"));

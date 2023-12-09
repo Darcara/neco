@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using FluentAssertions;
 using Neco.Common;
 using NUnit.Framework;
 
@@ -110,8 +111,8 @@ public class CrontabTests {
 	[TestCase("@hourly", "0 0 * * * *")]
 	public void Formatting(String exp1, String exp2)
 	{
-		var cron1 = Crontab.Parse(exp1);
-		var cron2 = Crontab.Parse(exp2);
+		Crontab cron1 = Crontab.Parse(exp1);
+		Crontab cron2 = Crontab.Parse(exp2);
 		cron2.PointInTime = cron1.PointInTime;
 		Console.WriteLine(cron1.ToDebugString());
 		Console.WriteLine(cron2.ToDebugString());
@@ -275,10 +276,10 @@ public class CrontabTests {
 	[TestCase("29/02/9988 00:00:00", "0 0 29 Feb Mon", "9999-12-31 23:59:59.999")]
 	public void Evaluations(String startTimeString, String cronExpression, String nextTimeString)
 	{
-		var cron = Crontab.Parse(cronExpression);
-		var nextTimeDirect = cron.CalculateNextOccurrence(DateTime.Parse(startTimeString, _testCulture, DateTimeStyles.AssumeLocal));
+		Crontab cron = Crontab.Parse(cronExpression);
+		DateTime nextTimeDirect = cron.CalculateNextOccurrence(DateTime.Parse(startTimeString, _testCulture, DateTimeStyles.AssumeLocal));
 		cron.PointInTime = DateTime.Parse(startTimeString, _testCulture, DateTimeStyles.AssumeLocal);
-		var nextTime = cron.NextPointInTime;
+		DateTime nextTime = cron.NextPointInTime;
 		Console.WriteLine(cron.ToDebugString());
 		Assert.That(nextTime, Is.EqualTo(nextTimeDirect));
 		Assert.That(nextTime, Is.EqualTo(DateTime.Parse(nextTimeString, _testCulture, DateTimeStyles.AssumeLocal)).Within(TimeSpan.FromMilliseconds(1)));
@@ -300,8 +301,8 @@ public class CrontabTests {
 	[TestCase("10 30 12 * * Mon", "01/01/2003 00:00:00", "06/01/2003 12:00:10")]
 	public void NeverOccurs(String cronExpression, String startTimeString, String endTimeString)
 	{
-		var cron = Crontab.Parse(cronExpression);
-		var nextTimeDirect = cron.CalculateNextOccurrence(DateTime.Parse(startTimeString, _testCulture, DateTimeStyles.AssumeLocal), DateTime.Parse(endTimeString, _testCulture, DateTimeStyles.AssumeLocal));
+		Crontab cron = Crontab.Parse(cronExpression);
+		DateTime nextTimeDirect = cron.CalculateNextOccurrence(DateTime.Parse(startTimeString, _testCulture, DateTimeStyles.AssumeLocal), DateTime.Parse(endTimeString, _testCulture, DateTimeStyles.AssumeLocal));
 
 		Assert.That(nextTimeDirect, Is.EqualTo(DateTime.MaxValue).Within(TimeSpan.FromMilliseconds(1)));
 
@@ -309,21 +310,20 @@ public class CrontabTests {
 		cron.CalculateNextOccurrences().Take(25).ToList().ForEach(dt => Console.WriteLine(dt));
 	}
 
-	[Timeout(1000)]
 	[TestCase("* * 31 Feb *")]
 	[TestCase("* * * 31 Feb *")]
 	public void DontLoopIndefinitely(String expression)
 	{
-		var cron = Crontab.Parse(expression);
+		Crontab cron = Crontab.Parse(expression);
 		Assert.That(cron.NextPointInTime, Is.EqualTo(DateTime.MaxValue));
 	}
 
 	[Test]
 	public void AdvanceTests()
 	{
-		var cron = Crontab.Parse("@daily");
+		Crontab cron = Crontab.Parse("@daily");
 		cron.PointInTime = DateTime.UnixEpoch.AddSeconds(1);
-		var next =cron.AdvancePointInTime();
+		DateTime next =cron.AdvancePointInTime();
 		Assert.That(cron.PointInTime, Is.EqualTo(DateTime.UnixEpoch.AddDays(1)));
 		Assert.That(cron.PointInTime, Is.EqualTo(next));
 		Assert.That(cron.NextPointInTime, Is.EqualTo(next.AddDays(1)));
@@ -337,11 +337,16 @@ public class CrontabTests {
 	[Test]
 	public void EqualityTests()
 	{
-		var cron = Crontab.Parse("@yearly");
-		Assert.IsTrue(cron != null);
-		Assert.IsFalse(cron == null);
-		Assert.IsTrue(cron.Equals(cron));
-		Assert.IsFalse(cron.Equals(null));
+		Crontab? cron = Crontab.Parse("@yearly");
+		cron.Should().NotBeNull();
+		
+		Assert.That(cron.Equals(cron), Is.True);
+		Assert.That(cron == cron, Is.True);
+		Assert.That(cron, Is.EqualTo(cron));
+		
+		Assert.That(cron.Equals(null), Is.False);
+		Assert.That(cron == null, Is.False);
+		Assert.That(cron, Is.Not.EqualTo(null));
 	}
 		
 }

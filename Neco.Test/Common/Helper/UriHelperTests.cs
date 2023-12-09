@@ -2,6 +2,7 @@ namespace Neco.Test.Common.Helper;
 
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using Neco.Common.Helper;
 using NUnit.Framework;
 
@@ -52,7 +53,7 @@ public class UriHelperTests {
 		UInt64 hash1 = UriHelper.HashUri(uri1);
 		UInt64 hash2 = UriHelper.HashUri(uri2);
 
-		Assert.AreEqual(hash1, hash2);
+		hash1.Should().Be(hash2);
 	}
 	
 	[TestCaseSource(nameof(RelativeTestCasesPositive))]
@@ -62,7 +63,7 @@ public class UriHelperTests {
 		UInt64 hash1 = UriHelper.HashUri(uri1);
 		UInt64 hash2 = UriHelper.HashUri(uri2);
 
-		Assert.AreEqual(hash1, hash2);
+		hash1.Should().Be(hash2);
 	}
 	
 	[TestCaseSource(nameof(AbsoluteTestCasesNegative))]
@@ -73,7 +74,7 @@ public class UriHelperTests {
 		UInt64 hash1 = UriHelper.HashUri(uri1);
 		UInt64 hash2 = UriHelper.HashUri(uri2);
 
-		Assert.AreNotEqual(hash1, hash2);
+		hash1.Should().NotBe(hash2);
 	}
 	
 	[TestCaseSource(nameof(RelativeTestCasesNegative))]
@@ -83,6 +84,6 @@ public class UriHelperTests {
 		UInt64 hash1 = UriHelper.HashUri(uri1);
 		UInt64 hash2 = UriHelper.HashUri(uri2);
 
-		Assert.AreNotEqual(hash1, hash2);
+		hash1.Should().NotBe(hash2);
 	}
 }
