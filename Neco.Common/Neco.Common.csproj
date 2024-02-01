@@ -25,6 +25,7 @@
         <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
+        <InternalsVisibleTo Include="Neco.Test" />
         <None Include="..\LICENSE" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="README.md" />
     </ItemGroup>
