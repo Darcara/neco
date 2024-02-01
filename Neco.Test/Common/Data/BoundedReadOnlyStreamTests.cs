@@ -18,14 +18,14 @@ public class BoundedReadOnlyStreamTests {
 	}
 
 	private Stream ConstructStream() {
-		byte[] buffer = new Byte[2048];
-		for (int i = 0; i < 512; i++) {
+		Byte[] buffer = new Byte[2048];
+		for (Int32 i = 0; i < 512; i++) {
 			buffer[i] = 0;
 		}
-		for (int i = 512; i < 512+1024; i++) {
+		for (Int32 i = 512; i < 512+1024; i++) {
 			buffer[i] = 1;
 		}
-		for (int i = 512+1024; i < buffer.Length; i++) {
+		for (Int32 i = 512+1024; i < buffer.Length; i++) {
 			buffer[i] = 0;
 		}
 

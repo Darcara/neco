@@ -12,7 +12,7 @@ public class SequentialGuidGeneratorTests {
 	[SetUp]
 	public void BeforeTest() {
 		// WarmUp JIT
-		for (int i = 0; i < 100; i++) SequentialGuidGenerator.CreateSequentialGuid();
+		for (Int32 i = 0; i < 100; i++) SequentialGuidGenerator.CreateSequentialGuid();
 
 		// Wait for clock to advance after current id tick
 		Thread.Sleep(10);

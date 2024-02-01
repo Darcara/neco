@@ -29,7 +29,7 @@ public class ZeroDataStreamTests {
 		Int32 bytesRead;
 		do {
 			bytesRead = s.Read(buffer);
-			Span<byte> trimmed = buffer.AsSpan(0, bytesRead).Trim((Byte)0);
+			Span<Byte> trimmed = buffer.AsSpan(0, bytesRead).Trim((Byte)0);
 			trimmed.Length.Should().Be(0);
 			totalBytesRead += bytesRead;
 			++maxReadsCounter;

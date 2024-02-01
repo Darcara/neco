@@ -115,7 +115,7 @@ public class RateLimitingStreamTests {
 		Byte[] buffer = new Byte[1024];
 		(RateLimitedStream stream, TokenBucketRateLimiter rateLimiter) = Create();
 
-		Task<int> task = stream.ReadAsync(buffer, 0, 10);
+		Task<Int32> task = stream.ReadAsync(buffer, 0, 10);
 		Assert.That(() => task.IsCompletedSuccessfully, Is.True.After(1000, 50));
 		task.Result.Should().Be(10);
 
@@ -160,7 +160,7 @@ public class RateLimitingStreamTests {
 	[Test]
 	public void RateLimitsSyncReadByte() {
 		(RateLimitedStream stream, TokenBucketRateLimiter rateLimiter) = Create();
-		for (int i = 0; i < 10; ++i) {
+		for (Int32 i = 0; i < 10; ++i) {
 			stream.ReadByte().Should().BeInRange(0, 255);
 		}
 
@@ -231,7 +231,7 @@ public class RateLimitingStreamTests {
 	[Test]
 	public void RateLimitsWriteByte() {
 		(RateLimitedStream stream, TokenBucketRateLimiter rateLimiter) = Create();
-		for (int i = 0; i < 10; ++i) {
+		for (Int32 i = 0; i < 10; ++i) {
 			stream.WriteByte(42);
 		}
 

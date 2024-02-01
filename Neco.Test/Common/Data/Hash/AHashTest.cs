@@ -18,7 +18,7 @@ public abstract class AHashTest {
 		}
 
 		using (HashAlgorithm? hasher = hashCreator()) {
-			Byte[]? paddedInput = new byte[input.Length + 1];
+			Byte[]? paddedInput = new Byte[input.Length + 1];
 			Array.Copy(input, 0, paddedInput, 1, input.Length);
 			paddedInput[0] = 0xA0;
 
@@ -30,7 +30,7 @@ public abstract class AHashTest {
 		}
 
 		using (HashAlgorithm? hasher = hashCreator()) {
-			Byte[]? paddedInput = new byte[input.Length + 1];
+			Byte[]? paddedInput = new Byte[input.Length + 1];
 			Array.Copy(input, 0, paddedInput, 0, input.Length);
 			paddedInput[input.Length] = 0xA0;
 
@@ -42,7 +42,7 @@ public abstract class AHashTest {
 		}
 
 		using (HashAlgorithm? hasher = hashCreator()) {
-			Byte[]? paddedInput = new byte[input.Length + 2];
+			Byte[]? paddedInput = new Byte[input.Length + 2];
 			Array.Copy(input, 0, paddedInput, 1, input.Length);
 			paddedInput[0] = 0xA0;
 			paddedInput[paddedInput.Length - 1] = 0xA0;
@@ -55,7 +55,7 @@ public abstract class AHashTest {
 		}
 	}
 
-	protected static void TestHashFunc(Dictionary<byte[], String> testCases, Func<HashAlgorithm> hashCreator) {
+	protected static void TestHashFunc(Dictionary<Byte[], String> testCases, Func<HashAlgorithm> hashCreator) {
 		foreach (Byte[]? input in testCases.Keys) {
 			String? expectedResult = testCases[input];
 			TestAllAtOnce(expectedResult, input, hashCreator);

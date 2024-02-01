@@ -27,7 +27,7 @@ public class IEnumerableExtensionTests {
 
 	[Test]
 	public void FindIndex() {
-		int idx = _strings.FindIndex(s => String.CompareOrdinal(s, "333") == 0);
+		Int32 idx = _strings.FindIndex(s => String.CompareOrdinal(s, "333") == 0);
 		Assert.That(idx, Is.EqualTo(1));
 
 		idx = Enumerable.Range(4, 14).FindIndex(i => i > 20);
@@ -36,7 +36,7 @@ public class IEnumerableExtensionTests {
 
 	[Test]
 	public void IndexOf() {
-		int idx = _strings.IndexOf("7777777");
+		Int32 idx = _strings.IndexOf("7777777");
 		Assert.That(idx, Is.EqualTo(2));
 
 		idx = Enumerable.Range(4, 14).IndexOf(555);
@@ -87,14 +87,14 @@ public class IEnumerableExtensionTests {
 
 	[Test]
 	public void RandomElement() {
-		int elem = Enumerable.Range(4, 100).RandomElementOrDefault();
+		Int32 elem = Enumerable.Range(4, 100).RandomElementOrDefault();
 		Assert.That(elem, Is.GreaterThanOrEqualTo(4).And.LessThan(104));
 
 		elem = Enumerable.Range(4, 1).RandomElementOrDefault();
 		Assert.That(elem, Is.EqualTo(4));
 
 		Int32[] elems = Enumerable.Range(4, 100).RandomElements(3);
-		foreach (int i in elems) {
+		foreach (Int32 i in elems) {
 			Assert.That(i, Is.GreaterThanOrEqualTo(4).And.LessThan(104));
 		}
 		
