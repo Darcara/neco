@@ -73,15 +73,10 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	private Int32 _byteBuffered;
 	private UInt64 _totalBytesProcessed;
 
-	public WyHashFinal3() {
-		HashSizeValue = 64;
-		_originalSeed = 0;
-		_originalSecret = new WyHashSecret();
-
-		Initialize();
+	public WyHashFinal3() : this(0xAC8FDFCE8D7ED9DFUL, new WyHashSecret()) {
 	}
 
-	public WyHashFinal3(UInt64 seed = 0, WyHashSecret? secret = null) {
+	public WyHashFinal3(UInt64 seed, WyHashSecret? secret = null) {
 		HashSizeValue = 64;
 		_originalSeed = seed;
 		_originalSecret = secret ?? new WyHashSecret();

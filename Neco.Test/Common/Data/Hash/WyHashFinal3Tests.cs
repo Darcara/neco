@@ -4,8 +4,8 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
+using FluentAssertions;
 using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
 using NUnit.Framework;
@@ -149,7 +149,10 @@ public class WyHashFinal3Tests : AHashTest {
 
 		UInt64 longHash = WyHashFinal3.HashOneOffLong(bytes, seed);
 		Assert.That(longHash, Is.EqualTo(BinaryPrimitives.ReverseEndianness(UInt64.Parse(expected, NumberStyles.HexNumber))), "HashOneLong must be equal to HashAlgorithm");
+		Assert.That(BinaryPrimitives.ReverseEndianness(longHash).ToString("X16"), Is.EqualTo(expected), "HashOneLong must be equal to HashAlgorithm");
+		Assert.That(BitConverter.GetBytes(longHash).ToStringHexSingleLine(), Is.EqualTo(expected), "HashOneLong must be equal to HashAlgorithm");
 
+		
 		String oneOffHash = WyHashFinal3.HashOneOff(bytes, seed).ToStringHexSingleLine();
 		Assert.That(oneOffHash, Is.EqualTo(expected), "HashOneOff must be equal to HashAlgorithm");
 
@@ -191,5 +194,32 @@ public class WyHashFinal3Tests : AHashTest {
 		String? hashReadable = hasher.Hash?.ToStringHexSingleLine();
 
 		Assert.That(hashReadable, Is.EqualTo(expected), $"Default hashing for {bytes.ToStringHexSingleLine()} - ({bytes.Length} bytes) {Encoding.ASCII.GetString(bytes)}");
+	}
+
+	[TestCase(128, 1)]
+	[TestCase(227840, 128*1024)]
+	[TestCase(128, 128*1024)]
+	public void HashesLargeDataConsistently(Int32 size, Int32 hashBlockSize) {
+		Byte[] buffer = new Byte[size];
+		Random.Shared.NextBytes(buffer);
+
+		UInt64 longHash = BinaryPrimitives.ReverseEndianness(WyHashFinal3.HashOneOffLong(buffer));
+		Byte[] byteHash = WyHashFinal3.HashOneOff(buffer);
+
+		WyHashFinal3 hasher = new();
+		hasher.Initialize();
+		Int32 bytesHashed = 0;
+		while (bytesHashed < size) {
+			Int32 bytesToHash = Math.Min(hashBlockSize, size - bytesHashed);
+			hasher.TransformBlock(buffer, bytesHashed, bytesToHash, null, 0);
+			bytesHashed += bytesToHash;
+		}
+		
+		bytesHashed.Should().Be(size);
+
+		hasher.TransformFinalBlock(Array.Empty<Byte>(), 0, 0);
+
+		longHash.ToString("X16").Should().Be(byteHash.ToStringHexSingleLine());
+		longHash.ToString("X16").Should().Be(hasher.Hash?.ToStringHexSingleLine());
 	}
 }
