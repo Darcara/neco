@@ -9,9 +9,9 @@ using NUnit.Framework;
 public class FileEntryTests {
 	[Test]
 	public void ImplementsInterfaceCorrectly() {
-		FileEntry fe = new("name", 123, 444);
-		FileEntry feSame = new("name", 123, 444);
-		FileEntry feOther = new("another", 123+444, 888);
+		FileEntry fe = new("name", 123, 444, false, 0, 0);
+		FileEntry feSame = new("name", 123, 444, false, 0, 0);
+		FileEntry feOther = new("another", 123 + 444, 888, false, 0, 0);
 
 		Assert.That(fe < feOther);
 		Assert.That(fe <= feOther);
