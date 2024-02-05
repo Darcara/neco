@@ -146,12 +146,13 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 
 		Boolean compressed = false;
 		Int64 uncompressedBytesCopied;
-		if (_options.Features.HasFlag(CatalogFeatures.CompressionPerEntryOptimal)) {
+		Boolean shouldCompress = _options.CompressionLookup == null || _options.CompressionLookup.DoesFileCompress(Path.GetExtension(entryName)) == FileCompression.Compressible;
+		if (_options.Features.HasFlag(CatalogFeatures.CompressionPerEntryOptimal) && shouldCompress) {
 			compressed = true;
 			using BrotliStream stream = new(_dataFileStream, CompressionLevel.Optimal, true);
 			uncompressedBytesCopied = inputStream.CopyToAndInspect(stream, inspector);
 			stream.Flush();
-		} else if (_options.Features.HasFlag(CatalogFeatures.CompressionPerEntrySmallest)) {
+		} else if (_options.Features.HasFlag(CatalogFeatures.CompressionPerEntrySmallest) && shouldCompress) {
 			compressed = true;
 			using BrotliStream stream = new(_dataFileStream, CompressionLevel.SmallestSize, true);
 			uncompressedBytesCopied = inputStream.CopyToAndInspect(stream, inspector);

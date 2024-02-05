@@ -3,11 +3,11 @@ namespace Neco.Test.Common.Data.Archive;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Neco.Common;
+using Neco.Common.Data;
 using Neco.Common.Data.Archive;
 using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
@@ -268,8 +268,30 @@ public class CatalogTests {
 		catalog.GetDataAsArray(1).Should().BeEquivalentTo(File.ReadAllBytes(typeof(Catalog).Assembly.Location));
 		catalog.GetDataAsArray(0).Should().BeEquivalentTo(File.ReadAllBytes(typeof(CatalogTests).Assembly.Location));
 		
-		VerifyFeatures(catalog.Entries, options?.Features ?? CatalogFeatures.None);
+		VerifyFeatures(catalog.Entries, options.Features);
+	}
 
+	[Test]
+	public void DoesNotCompressIfFileDoesNotCompress() {
+		MockCompressionLookup lookup = new();
+		CatalogOptions options = new() { CompressionLookup = lookup, Features = CatalogFeatures.CompressionPerEntryOptimal};
+		using Catalog catalog = Catalog.CreateNew(_testBaseName, options);
+		Assert.That(TestCatalogName, Does.Exist);
+		Assert.That(TestDataName, Does.Exist);
+
+		lookup.NextResult = FileCompression.Incompressible;
+		catalog.AppendEntry(typeof(CatalogTests).Assembly.Location);
+		catalog.Entries.Count.Should().Be(1);
+		catalog.GetDataAsArray(0).Should().BeEquivalentTo(File.ReadAllBytes(typeof(CatalogTests).Assembly.Location));
+		
+		lookup.NextResult = FileCompression.Compressible;
+		catalog.AppendEntry(new FileInfo(typeof(Catalog).Assembly.Location));
+		catalog.Entries.Count.Should().Be(2);
+		catalog.GetDataAsArray(1).Should().BeEquivalentTo(File.ReadAllBytes(typeof(Catalog).Assembly.Location));
+		catalog.GetDataAsArray(0).Should().BeEquivalentTo(File.ReadAllBytes(typeof(CatalogTests).Assembly.Location));
+
+		catalog.Entries[0].IsCompressed.Should().BeFalse();
+		catalog.Entries[1].IsCompressed.Should().BeTrue();
 	}
 
 	[Test]
@@ -310,3 +332,16 @@ public class CatalogTests {
 		Assert.That(buffer, Is.EquivalentTo(data2));
 	}
 }
+
+internal class MockCompressionLookup : IFileCompressionLookup {
+	public FileCompression NextResult { get; set; } = FileCompression.Unknown;
+	
+	#region Implementation of IFileCompressionLookup
+
+	/// <inheritdoc />
+	public FileCompression DoesFileCompress(String fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
+		return NextResult;
+	}
+
+	#endregion
+} 
