@@ -89,7 +89,7 @@ public class WyHashFinal3Tests : AHashTest {
 
 	[Test]
 	public void Hash64BitAllAtOnce() {
-		TestHashFunc(_testCases, () => new WyHashFinal3());
+		TestHashFunc(_testCases, () => new WyHashFinal3(0));
 	}
 
 	[Test]

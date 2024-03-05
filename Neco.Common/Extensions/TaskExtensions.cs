@@ -31,7 +31,7 @@ public static class TaskExtensions {
 		using CancellationTokenSource timeoutCancellationTokenSource = new();
 		Task completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
 		if (completedTask == task) {
-			timeoutCancellationTokenSource.Cancel();
+			await timeoutCancellationTokenSource.CancelAsync();
 			return await task;
 		}
 

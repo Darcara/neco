@@ -32,6 +32,7 @@ public class MiddlewarePipeline<TData> {
 	/// <remarks>Prefer this method, as it reslts in the least stacktrace pollution</remarks>
 	/// <example>
 	/// Use like: <code>next => ctx => FunctionCall(next, ctx)</code>
+	/// or <code>next => async ctx => FunctionCallAsync(next, ctx)</code>
 	/// </example>
 	public MiddlewarePipeline<TData> AppendMiddleware(Func<MiddlewareDelegate<TData>, MiddlewareDelegate<TData>> chainer) {
 		_middlewares.Add(chainer);

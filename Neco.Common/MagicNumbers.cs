@@ -15,5 +15,5 @@ public static class MagicNumbers {
 	/// <summary>
 	/// Provides an Encoding similar to <see cref="Encoding.UTF8"/>, but without the BOM-Preamble
 	/// </summary>
-	public static readonly UTF8Encoding NoBomEncoding = new(false);
+	public static readonly UTF8Encoding Utf8NoBom = new(false);
 }

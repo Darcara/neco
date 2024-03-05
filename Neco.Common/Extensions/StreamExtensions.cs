@@ -52,7 +52,7 @@ public static class StreamExtensions {
 			Int64 totalBytesCopied = 0;
 			Int32 bytesRead;
 			while ((bytesRead = await source.ReadAsync(bufferMem, cancellationToken)) != 0) {
-				await destination.WriteAsync(bufferMem.Slice(0, bytesRead), cancellationToken);
+				await destination.WriteAsync(bufferMem.Slice(0, bytesRead), cancellationToken).ConfigureAwait(false);
 				totalBytesCopied += bytesRead;
 				inspectCallback.Invoke(buffer, 0, bytesRead);
 			}

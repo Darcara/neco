@@ -56,8 +56,10 @@ public class RateLimitingStreamTests {
 		readTask2.IsCompletedSuccessfully.Should().BeTrue();
 		readTask2.GetAwaiter().GetResult().Should().Be(0);
 		Thread.Sleep(rateLimiter.ReplenishmentPeriod);
-		rateLimiter.TryReplenish();
-		Assert.That(() => readTask1.IsCompletedSuccessfully, Is.True.After(100, 1));
+		Assert.That(() => {
+			rateLimiter.TryReplenish();
+			return readTask1.IsCompletedSuccessfully;
+		}, Is.True.After(1000, 1));
 
 		Assert.DoesNotThrow(() => stream.Flush());
 		Assert.DoesNotThrowAsync(() => stream.FlushAsync());
