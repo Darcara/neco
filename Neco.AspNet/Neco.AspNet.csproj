@@ -22,7 +22,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-        <PackageReference Include="Neco.Common" Version="0.0.7-alpha" />
+        <PackageReference Include="Neco.Common" Version="0.0.8-alpha" />
     </ItemGroup>
 
     <ItemGroup>
