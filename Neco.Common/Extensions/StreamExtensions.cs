@@ -3,12 +3,67 @@ namespace Neco.Common.Extensions;
 using System;
 using System.Buffers;
 using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
 public delegate void InspectStreamDelegate(Byte[] data, Int32 offset, Int32 length);
 
 public static class StreamExtensions {
+	public static Int64 CopyTo(this PipeReader source, Stream destination, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
+		ArgumentNullException.ThrowIfNull(destination);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
+
+		Int64 totalBytesCopied = 0;
+		SpinWait spinner = new();
+
+		while (true) {
+			ReadResult readResult;
+			while (!source.TryRead(out readResult)) {
+				spinner.SpinOnce();
+			}
+
+			spinner.Reset();
+
+			if (readResult.IsCanceled || readResult.IsCompleted || readResult.Buffer.Length == 0) break;
+
+			foreach (ReadOnlyMemory<byte> readOnlyMemory in readResult.Buffer) {
+				destination.Write(readOnlyMemory.Span);
+				totalBytesCopied += readOnlyMemory.Span.Length;
+			}
+
+			source.AdvanceTo(readResult.Buffer.End);
+		}
+
+		return totalBytesCopied;
+	}
+
+	public static Int64 CopyTo(this Stream source, IBufferWriter<Byte> destination, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
+		ArgumentNullException.ThrowIfNull(destination);
+		// ArgumentNullException.ThrowIfNull(inspectCallback);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
+
+		if (!source.CanRead) throw new NotSupportedException("Destination stream not readable");
+
+		Byte[] buffer = ArrayPool<Byte>.Shared.Rent(bufferSize);
+		try {
+			Int64 totalBytesCopied = 0;
+			Int32 bytesRead;
+			while ((bytesRead = source.Read(buffer, 0, buffer.Length)) != 0) {
+				var destinationSpan = destination.GetSpan(bytesRead);
+				buffer.AsSpan(0, bytesRead).CopyTo(destinationSpan);
+				destination.Advance(bytesRead);
+				totalBytesCopied += bytesRead;
+				// inspectCallback.Invoke(buffer, 0, bytesRead);
+			}
+
+			return totalBytesCopied;
+		}
+		finally {
+			ArrayPool<Byte>.Shared.Return(buffer);
+		}
+	}
+
 	/// <inheritdoc cref="Stream.CopyTo(Stream, Int32)"/>
 	/// <returns>Number of bytes copied</returns>
 	public static Int64 CopyToAndInspect(this Stream source, Stream destination, InspectStreamDelegate inspectCallback, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
