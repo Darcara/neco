@@ -136,10 +136,12 @@ public class CatalogTests {
 	private void CreateTestCatalog(CatalogOptions? options = null) {
 		Assert.That(TestCatalogName, Does.Not.Exist);
 		Assert.That(TestDataName, Does.Not.Exist);
+		Assert.That(Catalog.Exists(TestCatalogName), Is.False);
 
 		using Catalog catalog = Catalog.CreateNew(_testBaseName, options);
 		Assert.That(TestCatalogName, Does.Exist);
 		Assert.That(TestDataName, Does.Exist);
+		Assert.That(Catalog.Exists(TestCatalogName), Is.True);
 
 		catalog.AppendEntry(typeof(CatalogTests).Assembly.Location);
 		catalog.Entries.Count.Should().Be(1);

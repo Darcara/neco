@@ -40,6 +40,10 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		_options = options;
 	}
 
+	/// <summary>
+	/// Creates a new Catalog
+	/// </summary>
+	/// <exception cref="ArchiveException">If an archive already exists</exception>
 	public static Catalog CreateNew(String baseName, CatalogOptions? options = null) {
 		options?.Validate();
 		String catalogFile = Path.ChangeExtension(baseName, "cat");
@@ -59,6 +63,10 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		return cat;
 	}
 
+	/// <summary>
+	/// Opens an existing Catalog
+	/// </summary>
+	/// <exception cref="ArchiveException">If not catalog exists with the given name</exception>
 	public static Catalog OpenExisting(String baseName, BasicCatalogOptions? options = null) {
 		String catalogFile = Path.ChangeExtension(baseName, "cat");
 		String dataFile = Path.ChangeExtension(baseName, "bin");
@@ -85,6 +93,16 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		return cat;
 	}
 
+	/// <summary>
+	/// Checks if a catalog exist
+	/// </summary>
+	public static Boolean Exists(String baseName) {
+		String catalogFile = Path.ChangeExtension(baseName, "cat");
+		String dataFile = Path.ChangeExtension(baseName, "bin");
+
+		return File.Exists(catalogFile) || File.Exists(dataFile);
+	}
+    
 	private static String DefaultRealativeEntryNameGenerator(DirectoryInfo baseDirectory, FileInfo fileToAppend) {
 		return Path.GetRelativePath(baseDirectory.FullName, fileToAppend.FullName);
 	}
