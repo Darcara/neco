@@ -64,6 +64,30 @@ public static class StreamExtensions {
 		}
 	}
 
+	public static void CopyPartiallyTo(this Stream source, Stream destination, Int64 length, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(destination);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
+		
+		if (!destination.CanWrite) throw new NotSupportedException("Destination stream not writable");
+		if (!source.CanRead) throw new NotSupportedException("Destination stream not readable");
+		
+		Int64 remaining = length;
+		Byte[] buffer = ArrayPool<Byte>.Shared.Rent((Int32)Math.Min(length, bufferSize));
+		try {
+			while (remaining > 0) {
+				Int32 toRead = (Int32)Math.Min(remaining, bufferSize);
+				Int32 actuallyRead = source.Read(buffer, 0, toRead);
+				destination.Write(buffer, 0, actuallyRead);
+				remaining -= actuallyRead;
+			}
+		}
+		finally {
+			ArrayPool<Byte>.Shared.Return(buffer);
+		}
+	}
+	
 	/// <inheritdoc cref="Stream.CopyTo(Stream, Int32)"/>
 	/// <returns>Number of bytes copied</returns>
 	public static Int64 CopyToAndInspect(this Stream source, Stream destination, InspectStreamDelegate inspectCallback, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
