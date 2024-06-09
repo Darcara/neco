@@ -10,11 +10,17 @@
 
     <ItemGroup>
         <PackageReference Include="Extensions.Logging.NUnit" Version="1.0.1" />
+        <PackageReference Include="AnyAscii" Version="0.3.2" />
+        <PackageReference Include="DawgSharp" Version="1.7.0" />
         <PackageReference Include="FluentAssertions" Version="6.12.0" />
         <PackageReference Include="HtmlAgilityPack" Version="1.11.60" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
         <PackageReference Include="Moq" Version="4.20.70" />
         <PackageReference Include="NUnit" Version="4.1.0" />
+        <PackageReference Include="NUnit.Analyzers" Version="4.1.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
         <PackageReference Include="coverlet.collector" Version="6.0.2">
           <PrivateAssets>all</PrivateAssets>
@@ -25,6 +31,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Neco.AspNet\Neco.AspNet.csproj" />
       <ProjectReference Include="..\Neco.Common\Neco.Common.csproj" />
+      <ProjectReference Include="..\Neco.Search\Neco.Search.csproj" />
     </ItemGroup>
 
     <ItemGroup>

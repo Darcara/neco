@@ -21,7 +21,7 @@ public class CrontabTests {
 	}
 
 	[TestCase("")]
-	[TestCase(null)]
+	[TestCase(null!)]
 	public void InvalidNullArguments(String expression)
 	{
 		Assert.Throws<ArgumentNullException>(() => Crontab.Parse(expression));
