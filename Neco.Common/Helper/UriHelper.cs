@@ -10,7 +10,7 @@ using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
 
 public static class UriHelper {
-	private static readonly Uri _exampleBaseUri = new("https://example.org", UriKind.Absolute);
+	internal static readonly Uri _exampleBaseUri = new("https://example.org", UriKind.Absolute);
 
 	// TODO: dynamic from cananonical link
 	// From https://stackoverflow.com/q/76372936
