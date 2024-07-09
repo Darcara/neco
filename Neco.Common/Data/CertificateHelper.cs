@@ -18,10 +18,10 @@ public static class CertificateHelper {
 		request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, true));
 		request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
 		request.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
-		request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection() {
-			new("1.3.6.1.5.5.7.3.1"),
-			new("1.3.6.1.5.5.7.3.2"),
-		}, false));
+		request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension([
+			new Oid("1.3.6.1.5.5.7.3.1"), // TLS_WEB_SERVER_AUTHENTICATION
+			new Oid("1.3.6.1.5.5.7.3.2"), // TLS_WEB_CLIENT_AUTHENTICATION
+		], false));
 		SubjectAlternativeNameBuilder subjectAlternativeNameBuilder = new();
 		subjectAlternativeNameBuilder.AddDnsName(cn);
 		if (ip != null)
@@ -31,8 +31,6 @@ public static class CertificateHelper {
 		if (rootCertificate == null) {
 			// TODO .Create(...) for proper issuer
 			return request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), validUntil ?? DateTimeOffset.UtcNow.AddYears(5));
-			// using X509Certificate2 sslcert = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), validUntil ?? DateTimeOffset.UtcNow.AddYears(5));
-			// return new X509Certificate2(sslcert.Export(X509ContentType.Pkcs12));
 		}
 
 		X509KeyUsageExtension? keyUsage = rootCertificate.Extensions.OfType<X509KeyUsageExtension>().SingleOrDefault();
@@ -41,10 +39,7 @@ public static class CertificateHelper {
 		Span<Byte> serialNumber = stackalloc Byte[8];
 		RandomNumberGenerator.Fill(serialNumber);
 		using X509Certificate2 sslcertPublic = request.Create(rootCertificate, DateTimeOffset.UtcNow.AddDays(-1), validUntil ?? rootCertificate.NotAfter, serialNumber);
-		X509Certificate2 sslcert = sslcertPublic.CopyWithPrivateKey(key);
-		return sslcert;
-		// using X509Certificate2 sslcert = sslcertPublic.CopyWithPrivateKey(key);
-		// return new X509Certificate2(sslcertPublic.Export(X509ContentType.Pkcs12));
+		return sslcertPublic.CopyWithPrivateKey(key);
 	}
 
 	public static X509Certificate2 CreateExportableSelfSignedRootCertificate(String cn, IPAddress? ip = null, DateTime? validUntil = null) {
