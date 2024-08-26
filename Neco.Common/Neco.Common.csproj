@@ -8,7 +8,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <PropertyGroup>
-        <PackageVersion>0.1.0-alpha</PackageVersion>
+        <PackageVersion>0.1.0</PackageVersion>
         <Title>Neco.Common</Title>
         <PackageId>Neco.Common</PackageId>
         <Authors>Darcara</Authors>
@@ -27,19 +27,16 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.11.0-beta1.24318.1">
             <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0">
             <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
             <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1"/>
-        <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="System.IO.Pipelines" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.*"/>
+        <PackageReference Include="System.Threading.RateLimiting" Version="8.*" PrivateAssets="All"/>
+        <PackageReference Include="System.IO.Pipelines" Version="8.*" PrivateAssets="All"/>
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Neco.Test"/>

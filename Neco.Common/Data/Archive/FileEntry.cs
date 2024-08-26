@@ -4,7 +4,7 @@ using System;
 using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
 
-public readonly struct FileEntry : IComparable<FileEntry>, IComparable {
+public readonly struct FileEntry : IEquatable<FileEntry>, IComparable<FileEntry>, IComparable {
 	/// <summary>
 	/// The full name including the relative or absolute path
 	/// </summary>

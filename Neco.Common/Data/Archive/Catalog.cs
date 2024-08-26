@@ -52,7 +52,7 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		if (File.Exists(dataFile)) throw new ArchiveException($"Data file already present: {dataFile}");
 
 		FileStream catalogFileStream = new(catalogFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, MagicNumbers.DefaultStreamBufferSize, false);
-		FileStream dataFileStream = new(dataFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, MagicNumbers.DefaultStreamBufferSize, false);
+		FileStream dataFileStream = new(dataFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read, MagicNumbers.DefaultStreamBufferSize, false);
 
 		options ??= CatalogOptions.Default;
 		catalogFileStream.WriteByte(CatalogOptions.OptionsIndicator);
@@ -79,7 +79,7 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		if (!dataInfo.Exists) throw new ArchiveException($"Missing catalog file: {dataFile}");
 
 		FileStream catalogFileStream = new(catalogFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None, MagicNumbers.DefaultStreamBufferSize, false);
-		FileStream dataFileStream = new(dataFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None, MagicNumbers.DefaultStreamBufferSize, false);
+		FileStream dataFileStream = new(dataFile, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, MagicNumbers.DefaultStreamBufferSize, false);
 
 		Catalog cat = new(catalogFile, dataFile, catalogFileStream, dataFileStream, CatalogOptions.FromCatalog(catalogFileStream, options ?? BasicCatalogOptions.DefaultBasic) ?? CatalogOptions.DefaultFrom(options));
 		try {
@@ -103,32 +103,19 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		return File.Exists(catalogFile) || File.Exists(dataFile);
 	}
     
-	private static String DefaultRealativeEntryNameGenerator(DirectoryInfo baseDirectory, FileInfo fileToAppend) {
-		return Path.GetRelativePath(baseDirectory.FullName, fileToAppend.FullName);
-	}
-
-	public void AppendFolder(String folder, String searchPattern, EnumerationOptions enumerationOptions, Func<FileInfo, Boolean>? includeFilePredicate = null, Func<DirectoryInfo, FileInfo, String>? entryNameGenerator = null) {
+	public void AppendFolder(String folder, String searchPattern, EnumerationOptions enumerationOptions, IncludeFilePredicate? includeFilePredicate = null, EntryNameGenerator? entryNameGenerator = null) {
 		ObjectDisposedException.ThrowIf(_isDisposed, this);
-		DirectoryInfo baseDirectory = new(folder);
-		IEnumerable<FileInfo> filesToAppend = baseDirectory.EnumerateFiles(searchPattern, enumerationOptions);
-		if (includeFilePredicate != null) filesToAppend = filesToAppend.Where(includeFilePredicate);
-		AppendEntries(filesToAppend, baseDirectory, entryNameGenerator ?? DefaultRealativeEntryNameGenerator);
+		AppendEntries(FileEnumerators.Folder(folder, searchPattern, enumerationOptions, includeFilePredicate, entryNameGenerator));
 	}
 
-	public void AppendFolder(String folder, String searchPattern, SearchOption searchOption, Func<FileInfo, Boolean>? includeFilePredicate = null, Func<DirectoryInfo, FileInfo, String>? entryNameGenerator = null) {
+	public void AppendFolder(String folder, String searchPattern, SearchOption searchOption, IncludeFilePredicate? includeFilePredicate = null, EntryNameGenerator? entryNameGenerator = null) {
 		ObjectDisposedException.ThrowIf(_isDisposed, this);
-		DirectoryInfo baseDirectory = new(folder);
-		IEnumerable<FileInfo> filesToAppend = baseDirectory.EnumerateFiles(searchPattern, searchOption);
-		if (includeFilePredicate != null) filesToAppend = filesToAppend.Where(includeFilePredicate);
-		AppendEntries(filesToAppend, baseDirectory, entryNameGenerator ?? DefaultRealativeEntryNameGenerator);
+		AppendEntries(FileEnumerators.Folder(folder, searchPattern, searchOption, includeFilePredicate, entryNameGenerator));
 	}
-
-	private void AppendEntries(IEnumerable<FileInfo> files, DirectoryInfo baseDirectory, Func<DirectoryInfo, FileInfo, String> entryNameGenerator) {
-		foreach (FileInfo fileInfo in files) {
-			if (!fileInfo.Exists) continue;
-			String entryName = entryNameGenerator(baseDirectory, fileInfo);
-			using FileStream inputStream = fileInfo.OpenRead();
-			AppendEntry(inputStream, entryName);
+	
+	public void AppendEntries(IFileEnumerator files) {
+		foreach (EnumeratedFile fileInfo in files) {
+			AppendEntry(fileInfo.DataStream, fileInfo.NameInCatalog);
 		}
 	}
 
@@ -222,6 +209,14 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 
 	public Stream GetDataAsStream(FileEntry entry) {
 		BoundedReadOnlyStream rawDataStream = new(_dataFileStream, entry.Offset, entry.Length, false);
+		if (!entry.IsCompressed)
+			return rawDataStream;
+		return new BrotliStream(rawDataStream, CompressionMode.Decompress, false);
+	}
+	
+	public Stream GetDataAsStandaloneStream(FileEntry entry) {
+		FileStream stream = new(_dataFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, MagicNumbers.DefaultStreamBufferSize, false);
+		BoundedReadOnlyStream rawDataStream = new(stream, entry.Offset, entry.Length, true);
 		if (!entry.IsCompressed)
 			return rawDataStream;
 		return new BrotliStream(rawDataStream, CompressionMode.Decompress, false);

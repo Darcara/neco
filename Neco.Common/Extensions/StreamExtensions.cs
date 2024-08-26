@@ -40,7 +40,6 @@ public static class StreamExtensions {
 
 	public static Int64 CopyTo(this Stream source, IBufferWriter<Byte> destination, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
 		ArgumentNullException.ThrowIfNull(destination);
-		// ArgumentNullException.ThrowIfNull(inspectCallback);
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
 
 		if (!source.CanRead) throw new NotSupportedException("Destination stream not readable");
@@ -54,7 +53,6 @@ public static class StreamExtensions {
 				buffer.AsSpan(0, bytesRead).CopyTo(destinationSpan);
 				destination.Advance(bytesRead);
 				totalBytesCopied += bytesRead;
-				// inspectCallback.Invoke(buffer, 0, bytesRead);
 			}
 
 			return totalBytesCopied;
