@@ -13,7 +13,7 @@ public class RelativeErrorColumn : IColumn {
 	public String GetValue(Summary summary, BenchmarkCase benchmarkCase, SummaryStyle style) {
 		Statistics? s = summary[benchmarkCase].ResultStatistics;
 		if (s == null) return "NA";
-		Double margin = new ConfidenceInterval(s.Mean, s.StandardError, s.N).Margin;
+		Double margin = new ConfidenceInterval(s.Mean, s.StandardError, s.N, ConfidenceLevel.L90).Margin;
 		return ((margin / s.Mean) * 1000).ToString("N3");
 	}
 
