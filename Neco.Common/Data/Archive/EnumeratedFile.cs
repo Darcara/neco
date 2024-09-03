@@ -27,7 +27,7 @@ public sealed class EnumeratedFile : IEquatable<EnumeratedFile> {
 	public Boolean Equals(EnumeratedFile? other) {
 		if (other is null) return false;
 		if (ReferenceEquals(this, other)) return true;
-		return NameInCatalog == other.NameInCatalog;
+		return String.Equals(NameInCatalog,other.NameInCatalog, StringComparison.Ordinal);
 	}
 
 	/// <inheritdoc />

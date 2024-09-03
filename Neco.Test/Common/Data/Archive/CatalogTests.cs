@@ -17,8 +17,8 @@ using NUnit.Framework;
 [TestFixture]
 public class CatalogTests {
 	private const String _testBaseName = "test";
-	private String TestCatalogName => Path.ChangeExtension(_testBaseName, ".cat");
-	private String TestDataName => Path.ChangeExtension(_testBaseName, ".bin");
+	internal static String TestCatalogName => Path.ChangeExtension(_testBaseName, ".cat");
+	private static String TestDataName => Path.ChangeExtension(_testBaseName, ".bin");
 
 	private static IEnumerable<CatalogOptions?> CatalogOptionsTestCases {
 		get {
@@ -32,7 +32,7 @@ public class CatalogTests {
 	}
 
 	[SetUp]
-	public void BeforeEachTest() {
+	public static void BeforeEachTest() {
 		File.Delete(TestCatalogName);
 		File.Delete(TestDataName);
 	}
@@ -133,7 +133,7 @@ public class CatalogTests {
 		Console.WriteLine(ex);
 	}
 
-	private void CreateTestCatalog(CatalogOptions? options = null) {
+	internal static void CreateTestCatalog(CatalogOptions? options = null) {
 		Assert.That(TestCatalogName, Does.Not.Exist);
 		Assert.That(TestDataName, Does.Not.Exist);
 		Assert.That(Catalog.Exists(TestCatalogName), Is.False);
@@ -154,7 +154,7 @@ public class CatalogTests {
 		VerifyFeatures(catalog.Entries, options?.Features ?? CatalogFeatures.None);
 	}
 
-	private void VerifyFeatures(IReadOnlyList<FileEntry> entries, CatalogFeatures features) {
+	private static void VerifyFeatures(IReadOnlyList<FileEntry> entries, CatalogFeatures features) {
 		for (int index = 0; index < entries.Count; index++) {
 			FileEntry entry = entries[index];
 			File.Exists(entry.Name).Should().BeTrue($"Entry #{index}");
@@ -226,7 +226,7 @@ public class CatalogTests {
 	public void CreateFolderArchive() {
 		Int32 simpleCount;
 		using (Catalog catalog = Catalog.CreateNew(_testBaseName)) {
-			catalog.AppendFolder(".", "*.*", SearchOption.AllDirectories, includeFilePredicate: fi => fi.Name != TestCatalogName && fi.Name != TestDataName);
+			catalog.AppendFolder(".", "*.*", SearchOption.AllDirectories, includeFilePredicate: (filename, _) => new FileInfo(filename).Name != TestCatalogName && new FileInfo(filename).Name != TestDataName);
 			simpleCount = catalog.Entries.Count;
 		}
 
@@ -235,7 +235,7 @@ public class CatalogTests {
 		BeforeEachTest();
 		Int32 optionsCount;
 		using (Catalog catalog = Catalog.CreateNew(_testBaseName)) {
-			catalog.AppendFolder(".", "*.*", new EnumerationOptions() { IgnoreInaccessible = true, RecurseSubdirectories = true }, includeFilePredicate: fi => fi.Name != TestCatalogName && fi.Name != TestDataName);
+			catalog.AppendFolder(".", "*.*", new EnumerationOptions() { IgnoreInaccessible = true, RecurseSubdirectories = true }, includeFilePredicate: (filename, _) => new FileInfo(filename).Name != TestCatalogName && new FileInfo(filename).Name != TestDataName);
 			optionsCount = catalog.Entries.Count;
 		}
 
@@ -294,6 +294,21 @@ public class CatalogTests {
 
 		catalog.Entries[0].IsCompressed.Should().BeFalse();
 		catalog.Entries[1].IsCompressed.Should().BeTrue();
+	}
+	
+	[Test]
+	public void DoesNotCompressIfFileTooSmall() {
+		MockCompressionLookup lookup = new();
+		CatalogOptions options = new() { CompressionLookup = lookup, Features = CatalogFeatures.CompressionPerEntryOptimal};
+		using Catalog catalog = Catalog.CreateNew(_testBaseName, options);
+		Assert.That(TestCatalogName, Does.Exist);
+		Assert.That(TestDataName, Does.Exist);
+
+		lookup.NextResult = FileCompression.Compressible;
+		using MemoryStream ms = new("Less than 32b does not compress"u8.ToArray());
+		catalog.AppendEntry(ms, "somefile.txt");
+		catalog.Entries.Count.Should().Be(1);
+		catalog.GetDataAsArray(0).LongLength.Should().Be(ms.Length);
 	}
 
 	[Test]

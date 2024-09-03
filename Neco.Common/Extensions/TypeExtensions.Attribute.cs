@@ -60,6 +60,6 @@ public static partial class TypeExtensions {
 	public static IEnumerable<Attribute> GetCustomAttributesIncludingBaseInterfaces(this MemberInfo mi, String fullAttributeTypeName) {
 		return mi
 			.GetCustomAttributesIncludingBaseInterfaces(typeof(Attribute))
-			.Where(attribute => String.Equals(fullAttributeTypeName, attribute.GetType().GetFullName()) || String.Equals(fullAttributeTypeName, attribute.GetType().GetFullGenericName()));
+			.Where(attribute => String.Equals(fullAttributeTypeName, attribute.GetType().GetFullName(), StringComparison.Ordinal) || String.Equals(fullAttributeTypeName, attribute.GetType().GetFullGenericName(), StringComparison.Ordinal));
 	}
 }

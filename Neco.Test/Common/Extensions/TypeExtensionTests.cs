@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using FluentAssertions;
 using Neco.Common.Extensions;
 using NUnit.Framework;
 
@@ -78,10 +79,54 @@ public class TypeExtensionTests {
 	public void MethodsIncludingSuperInterfaces() {
 		List<MethodInfo> methodInfos = typeof(ImplementingClass).GetMethodsIncludingSuperInterfaces().ToList();
 		methodInfos.ForEach(mi => Console.WriteLine($"{mi} from {mi.DeclaringType.GetName()} at {mi.ReflectedType.GetName()}"));
-		Assert.That(methodInfos, Has.Count.EqualTo(6));
+		Assert.That(methodInfos, Has.Count.EqualTo(8));
 	}
 
-	private abstract class ABaseClass<T> : IEquatable<T> {
+	[Test]
+	public void GetCustomAttributes() {
+		typeof(ImplementingClass)
+			.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>()
+			.Should().HaveCount(3);
+		typeof(ImplementingClass)
+			.GetCustomAttributesIncludingBaseInterfaces<MultiAttribute>()
+			.Should().HaveCount(3);
+		typeof(ImplementingClass)
+			.GetCustomAttributesIncludingBaseInterfaces<SingleNonInheritingAttribute>()
+			.Should().HaveCount(3);
+	}
+
+	[Test]
+	public void GetCustomAttributesForMember() {
+		MethodInfo? methodInfo = typeof(ImplementingClass).GetMethod(nameof(IInterface.SomeMethod));
+		Assert.That(methodInfo, Is.Not.Null);
+
+		methodInfo
+			.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>()
+			.Should().HaveCount(3);
+
+		methodInfo
+			.GetCustomAttributesIncludingBaseInterfaces(nameof(MultiAttribute))
+			.Should().HaveCount(3);
+
+		methodInfo
+			.GetCustomAttributesIncludingBaseInterfaces(typeof(SingleNonInheritingAttribute))
+			.Should().HaveCount(3);
+	}
+
+	[Single("Interface")]
+	[SingleNonInheriting("Interface")]
+	[Multi("Interface")]
+	private interface IInterface {
+		[Single("Interface.SomeMethod")]
+		[SingleNonInheriting("Interface.SomeMethod")]
+		[Multi("Interface.SomeMethod")]
+		public void SomeMethod();
+	}
+
+	[Single("ABaseClass")]
+	[SingleNonInheriting("ABaseClass")]
+	[Multi("ABaseClass")]
+	private abstract class ABaseClass<T> : IInterface, IEquatable<T> {
 		#region Implementation of IEquatable<T>
 
 		/// <inheritdoc />
@@ -95,14 +140,45 @@ public class TypeExtensionTests {
 				return someSet.FirstOrDefault(s => s.Equals(someT) || s.Equals(someS));
 			}
 		}
+
+		#region Implementation of IInterface
+
+		/// <inheritdoc />
+		[Single("ABaseClass.SomeMethod")]
+		[SingleNonInheriting("ABaseClass.SomeMethod")]
+		[Multi("ABaseClass.SomeMethod")]
+		public abstract void SomeMethod();
+
+		#endregion
 	}
 
+	[Single("ImplementingClass")]
+	[SingleNonInheriting("ImplementingClass")]
+	[Multi("ImplementingClass")]
 	private sealed class ImplementingClass : ABaseClass<String> {
 		#region Overrides of ABaseClass<string>
 
 		/// <inheritdoc />
 		public override Boolean Equals(String? other) => throw new InvalidOperationException();
 
+		/// <inheritdoc />
+		[Single("ImplementingClass.SomeMethod")]
+		[SingleNonInheriting("ImplementingClass.SomeMethod")]
+		[Multi("ImplementingClass.SomeMethod")]
+		public override void SomeMethod() => throw new NotImplementedException();
+
 		#endregion
+	}
+
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = true)]
+	private sealed class SingleAttribute(String Data) : Attribute {
+	}
+
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)]
+	private sealed class SingleNonInheritingAttribute(String Data) : Attribute {
+	}
+
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = true)]
+	private sealed class MultiAttribute(String Data) : Attribute {
 	}
 }

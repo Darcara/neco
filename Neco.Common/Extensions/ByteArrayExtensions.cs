@@ -26,11 +26,13 @@ public static class ByteArrayExtensions {
 	// public static String ToStringHexDump(this Byte[] bArr, Int32 size = 16, Int32 offset = 0, Int32 length = -1) => new ReadOnlySpan<Byte>(bArr, offset, length > 0 ? length : bArr.Length).ToStringHexDump(size);
 	// public static String ToStringHexDump(this ReadOnlySpan<Byte> bArr, Int32 size = 16) {
 
-	public static String ToStringHexDump(this ReadOnlySpan<Byte> bArr, Int32 size = 16) => bArr.ToArray().ToStringHexDump(size); 
+	public static String ToStringHexDump(this Span<Byte> bArr, Int32 size = 16) => bArr.ToArray().ToStringHexDump(size);
+	public static String ToStringHexDump(this ReadOnlySpan<Byte> bArr, Int32 size = 16) => bArr.ToArray().ToStringHexDump(size);
+
 	public static String ToStringHexDump(this Byte[]? bArr, Int32 size = 16, Int32 offset = -1, Int32 length = -1) {
-		if (bArr == null) 
+		if (bArr == null)
 			return "null";
-		if (bArr.Length == 0) 
+		if (bArr.Length == 0)
 			return "empty";
 		if (offset < 0)
 			offset = 0;
@@ -45,7 +47,7 @@ public static class ByteArrayExtensions {
 		Int32 cnt = 0;
 		for (Int32 i = offset; i < offset + length; ++i) {
 			if (cnt % size == 0 && cnt > 0) {
-				sb.Append(" ");
+				sb.Append(' ');
 				for (Int32 j = i - size; j < i; ++j) {
 					if (bArr[j] < 32)
 						sb.Append('.');
@@ -64,10 +66,8 @@ public static class ByteArrayExtensions {
 
 		for (Int32 i = 0; i < (size - (length % size)) % size; ++i)
 			sb.Append("  ");
-		sb.Append(" ");
-		for (Int32 j = (offset + length) - (length % size == 0 ? size : length % size); j < offset + length; ++j) {
-			if(j<0 || j >= bArr.Length)
-				Console.WriteLine("...");
+		sb.Append(' ');
+		for (Int32 j = Math.Max(0, (offset + length) - (length % size == 0 ? size : length % size)); j < Math.Min(bArr.Length, offset + length); ++j) {
 			if (bArr[j] < 32)
 				sb.Append('.');
 			else {
@@ -77,10 +77,6 @@ public static class ByteArrayExtensions {
 		}
 
 		return sb.ToString();
-	}
-
-	public static void CopyTo(this Byte[] source, Byte[] target, Int32 idxTarget) {
-		source.CopyTo(0, target, idxTarget, source.Length);
 	}
 
 	public static void CopyTo(this Byte[] source, Int32 idxSource, Byte[] target, Int32 idxTarget, Int32 length) {
@@ -97,20 +93,14 @@ public static class ByteArrayExtensions {
 	/// <param name="count">The number of bytes to check</param>
 	/// <returns>True if the arrays are equal, false if they aren't</returns>
 	public static Boolean Matches(this Byte[]? array1, Byte[]? array2, Int32 offset1 = 0, Int32 offset2 = 0, Int32 count = -1) {
+		ArgumentOutOfRangeException.ThrowIfNegative(offset1);
+		ArgumentOutOfRangeException.ThrowIfNegative(offset2);
 		if (ReferenceEquals(array1, array2)) return true;
 		if (array1 == null || array2 == null) return false;
+		Int32 count1 = count >= 0 ? count : array1.Length - offset1;
+		Int32 count2 = count >= 0 ? count : array2.Length - offset2;
+		if(count1 != count2 || offset1 + count1 > array1.Length || offset2 + count2 > array2.Length) return false;
 
-		if (count == -1) {
-			if (array1.Length != array2.Length) return false;
-			count = array1.Length;
-		}
-
-		if ((array1.Length - offset1) < count || (array2.Length - offset2) < count) return false;
-
-		for (Int32 i = 0; i < count; i++)
-			if (array1[offset1 + i] != array2[offset2 + i])
-				return false;
-
-		return true;
+		return array1.AsSpan(offset1, count1).SequenceEqual(new ReadOnlySpan<Byte>(array2, offset2, count2));
 	}
 }

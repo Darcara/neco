@@ -25,6 +25,10 @@ public static class NumericExtensions {
 	public static String ToFileSize(this Int64 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
 	public static String ToFileSize(this UInt64 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
+	
+	public static String ToFileSize(this Int128 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize((Double)source, format, useSiPrefix);
+
+	public static String ToFileSize(this UInt128 source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize((Double)source, format, useSiPrefix);
 
 	public static String ToFileSize(this Single source, String format = "0.00", Boolean useSiPrefix = false) => ToFileSize(Convert.ToDouble(source), format, useSiPrefix);
 
@@ -85,17 +89,17 @@ public static class NumericExtensions {
 
 	public static Int32 MiB(this Int32 source) => source * 1024 * 1024;
 
-	public static Int64 GiB(this Int32 source) => source * 1024 * 1024 * 1024;
+	public static Int64 GiB(this Int32 source) => (Int64)source * 1024 * 1024 * 1024;
 
-	public static Int64 TiB(this Int32 source) => source * 1024 * 1024 * 1024 * 1024;
+	public static Int64 TiB(this Int32 source) => (Int64)source * 1024 * 1024 * 1024 * 1024;
 
 	public static Int32 KB(this Int32 source) => source * 1000;
 
 	public static Int32 MB(this Int32 source) => source * 1000 * 1000;
 
-	public static Int64 GB(this Int32 source) => source * 1000 * 1000 * 1000;
+	public static Int64 GB(this Int32 source) => (Int64)source * 1000 * 1000 * 1000;
 
-	public static Int64 TB(this Int32 source) => source * 1000 * 1000 * 1000 * 1000;
+	public static Int64 TB(this Int32 source) => (Int64)source * 1000 * 1000 * 1000 * 1000;
 
 	public static Int64 KiB(this Int64 source) => source * 1024;
 
@@ -113,13 +117,13 @@ public static class NumericExtensions {
 
 	public static Int64 TB(this Int64 source) => source * 1000 * 1000 * 1000 * 1000;
 
-	public static Int64 SecondsInTicks(this Int32 source) => source * 10_000_000;
+	public static Int64 SecondsInTicks(this Int32 source) => source * TimeSpan.TicksPerSecond;
 
-	public static Int32 SecondsInMs(this Int32 source) => source * 1000;
+	public static Int64 SecondsInMs(this Int32 source) => (Int64)source * 1000;
 
-	public static Int32 MinutesInMs(this Int32 source) => source * 60 * 1000;
+	public static Int64 MinutesInMs(this Int32 source) => (Int64)source * 60 * 1000;
 
-	public static Int32 HoursInMs(this Int32 source) => source * 60 * 60 * 1000;
+	public static Int64 HoursInMs(this Int32 source) => (Int64)source * 60 * 60 * 1000;
 
 	#endregion
 }

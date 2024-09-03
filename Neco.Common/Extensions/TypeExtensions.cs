@@ -53,15 +53,13 @@ public static partial class TypeExtensions {
 	/// <para>For generic types the name will be the name of the type with the current generic type </para>
 	/// </summary>
 	/// <param name="t">The type</param>
-	/// <param name="lp">Left/Start delimiter for generic types, default is '&lt;'</param>
-	/// <param name="rp">Right/End delimiter for generic types, default is '&gt;</param>
 	/// <returns>The correct name of the type, without the generic hint, like 'Generic&lt;SomeType&gt;'</returns>
-	public static String GetGenericName(this Type? t, String lp = "<", String rp = ">") {
+	public static String GetGenericName(this Type? t) {
 		if (t == null)
 			return "null";
 		if (!t.IsGenericType)
 			return t.Name;
-		return CleanNameGeneric(t.Name, lp, rp, t);
+		return CleanNameGeneric(t.Name, "<", ">", t);
 	}
 
 	/// <summary>

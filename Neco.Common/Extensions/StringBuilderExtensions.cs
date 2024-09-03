@@ -4,19 +4,12 @@ using System;
 using System.Text;
 
 public static class StringBuilderExtensions {
-	public static StringBuilder AppendLineFormat(this StringBuilder source, String format, params Object[] p) {
-		source.AppendFormat(format, p);
-		source.Append(Environment.NewLine);
-		return source;
-	}
 
 	public static StringBuilder AppendUpperInvariant(this StringBuilder builder, String? value) {
 		if (String.IsNullOrEmpty(value)) return builder;
 
 		builder.EnsureCapacity(builder.Length + value.Length);
-		for (var i = 0; i < value.Length; i++) {
-			builder.Append(Char.ToUpperInvariant(value[i]));
-		}
+		builder.Append(value.ToUpperInvariant());
 
 		return builder;
 	}
@@ -25,9 +18,7 @@ public static class StringBuilderExtensions {
 		if (String.IsNullOrEmpty(value)) return builder;
 
 		builder.EnsureCapacity(builder.Length + value.Length);
-		for (var i = 0; i < value.Length; i++) {
-			builder.Append(Char.ToLowerInvariant(value[i]));
-		}
+		builder.Append(value.ToLowerInvariant());
 
 		return builder;
 	}
