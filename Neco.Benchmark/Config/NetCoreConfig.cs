@@ -1,9 +1,5 @@
 ﻿namespace Neco.Benchmark.Config;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
@@ -38,8 +34,8 @@ public class NetCoreConfig : ManualConfig {
 
 		AddDiagnoser(MemoryDiagnoser.Default);
 		// AddDiagnoser(ThreadingDiagnoser.Default);
-		AddHardwareCounters(HardwareCounter.BranchInstructions);
-		AddHardwareCounters(HardwareCounter.BranchMispredictions);
+		// AddHardwareCounters(HardwareCounter.BranchInstructions);
+		// AddHardwareCounters(HardwareCounter.BranchMispredictions);
 		// AddHardwareCounters(HardwareCounter.CacheMisses);
 		// AddHardwareCounters(HardwareCounter.LlcMisses);
 		// AddHardwareCounters(HardwareCounter.TotalCycles);
