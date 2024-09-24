@@ -20,14 +20,14 @@ public sealed class ObjectMethodExecutor {
 	private readonly MethodExecutor? _executor;
 
 	private static readonly ConstructorInfo _objectMethodExecutorAwaitableConstructor =
-		typeof(ObjectMethodExecutorAwaitable).GetConstructor(new[] {
+		typeof(ObjectMethodExecutorAwaitable).GetConstructor([
 			typeof(Object), // customAwaitable
 			typeof(Func<Object, Object>), // getAwaiterMethod
 			typeof(Func<Object, Boolean>), // isCompletedMethod
 			typeof(Func<Object, Object>), // getResultMethod
 			typeof(Action<Object, Action>), // onCompletedMethod
 			typeof(Action<Object, Action>), // unsafeOnCompletedMethod
-		})!;
+		])!;
 
 	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo targetTypeInfo, Object?[]? parameterDefaultValues) {
 		ArgumentNullException.ThrowIfNull(methodInfo);
@@ -74,7 +74,7 @@ public sealed class ObjectMethodExecutor {
 
 	public Boolean IsMethodAsync { get; }
 
-	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo) => new(methodInfo, targetTypeInfo, Array.Empty<Object>());
+	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo) => new(methodInfo, targetTypeInfo, []);
 
 	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo, Object?[] parameterDefaultValues) {
 		ArgumentNullException.ThrowIfNull(parameterDefaultValues);

@@ -20,7 +20,7 @@ internal class AuthFileEntry {
 	public static AuthFileEntry DeSerialize(String authFileEntry) {
 		ArgumentException.ThrowIfNullOrEmpty(authFileEntry);
 
-		String[] parts = authFileEntry.Split(new[] { '$' });
+		String[] parts = authFileEntry.Split('$');
 		if (parts.Length != 4)
 			throw new ArgumentException("invalid entry", nameof(authFileEntry));
 

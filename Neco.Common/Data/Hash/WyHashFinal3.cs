@@ -63,7 +63,7 @@ public readonly struct WyHashSecret {
 
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
 public unsafe class WyHashFinal3 : HashAlgorithm {
-	private static readonly Byte[] _seedLookupBytes = { 15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240 };
+	private static readonly Byte[] _seedLookupBytes = [15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240];
 	private static readonly UInt64 _seedLookupBytesLength = (UInt64)_seedLookupBytes.Length;
 
 	private readonly UInt64 _originalSeed;

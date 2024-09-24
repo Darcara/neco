@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Unicode;
@@ -28,7 +27,7 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 	private readonly StandardFormat _writeOffsetFormat = StandardFormat.Parse("X16");
 	private readonly FileStream _dataFileStream;
 	private readonly CatalogOptions _options;
-	private readonly List<FileEntry> _entries = new();
+	private readonly List<FileEntry> _entries = [];
 	public IReadOnlyList<FileEntry> Entries => _entries;
 	private Boolean _isDisposed;
 
@@ -170,7 +169,7 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 
 		Int64 checksum = 0;
 		if (_options.Features.HasFlag(CatalogFeatures.ChecksumPerEntry)) {
-			hasher!.TransformFinalBlock(Array.Empty<Byte>(), 0, 0);
+			hasher!.TransformFinalBlock([], 0, 0);
 			Byte[] hash = hasher.Hash!;
 			Debug.Assert(hash.Length == 8);
 			checksum = BitConverter.ToInt64(hash);

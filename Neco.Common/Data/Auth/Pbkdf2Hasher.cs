@@ -3,7 +3,6 @@ namespace Neco.Common.Data.Auth;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Linq;
 using System.Security.Cryptography;
 
 /// <summary>
@@ -20,7 +19,7 @@ public sealed class Pbkdf2Hasher : IPasswordHashingFunction {
 	public static readonly Pbkdf2Hasher Instance = new();
 
 	// Using this is almost the same as not using pepper and therefore has only marginal security gains 
-	private static readonly Byte[] _defaultPepper = { 0x9D, 0x96, 0x2E, 0x61, 0xAD, 0x03, 0x44, 0xB7, 0x07, 0x6F, 0x1B, 0xA1, 0xF4, 0xC8, 0xAC, 0x6F };
+	private static readonly Byte[] _defaultPepper = [0x9D, 0x96, 0x2E, 0x61, 0xAD, 0x03, 0x44, 0xB7, 0x07, 0x6F, 0x1B, 0xA1, 0xF4, 0xC8, 0xAC, 0x6F];
 	private readonly Byte[] _pepper;
 
 	public Pbkdf2Hasher() {

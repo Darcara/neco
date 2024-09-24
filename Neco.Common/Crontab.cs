@@ -64,11 +64,11 @@ public sealed class Crontab {
 	/// <summary>
 	/// The whitespace separators that can separate each cron part.
 	/// </summary>
-	private static readonly Char[] _cronPartSeparators = { ' ', '\t' };
+	private static readonly Char[] _cronPartSeparators = [' ', '\t'];
 
-	private static readonly String[] _monthAlias = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+	private static readonly String[] _monthAlias = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-	private static readonly String[] _dayOfWeekAlias = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+	private static readonly String[] _dayOfWeekAlias = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 	private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
 
 	public DateTime PointInTime { get; set; } = DateTime.UtcNow;

@@ -16,7 +16,7 @@ public class AuthFile : IAuthenticationProvider{
 	/// <summary>
 	/// Characters that are illegal to use in username <see cref="IPasswordHashingFunction"/>.<see cref="IPasswordHashingFunction.Id"/> and 
 	/// </summary>
-	public static readonly HashSet<Char> IllegalChars = new() { PartSeparator, EntrySeparator, CommentFirstChar };
+	public static readonly HashSet<Char> IllegalChars = [PartSeparator, EntrySeparator, CommentFirstChar];
 
 	internal const Char PartSeparator = '$';
 	internal const Char EntrySeparator = '\n';
