@@ -5,9 +5,16 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <OutputType>Library</OutputType>
+        <IsTrimmable>true</IsTrimmable>
+        <IsAotCompatible>true</IsAotCompatible>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableAotAnalyzer>true</EnableAotAnalyzer>
     </PropertyGroup>
+
     <PropertyGroup>
-        <PackageVersion>0.0.5-alpha</PackageVersion>
+        <PackageVersion>0.0.6</PackageVersion>
         <Title>Neco.AspNet</Title>
         <PackageId>Neco.AspNet</PackageId>
         <Authors>Darcara</Authors>
@@ -17,12 +24,16 @@
         <Description>Necessary Code for AspNet - Commonly required web code fragments</Description>
         <PackageProjectUrl>https://github.com/Darcara/neco</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Darcara/neco</RepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EmbedAllSources>true</EmbedAllSources>
+        <DebugType>portable</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.*" />
-        <PackageReference Include="Neco.Common" Version="0.1.0" />
+        <PackageReference Include="Neco.Common" Version="0.1.1" />
     </ItemGroup>
 
     <ItemGroup>

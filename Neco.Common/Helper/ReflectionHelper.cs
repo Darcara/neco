@@ -9,10 +9,10 @@ using Neco.Common.Extensions;
 
 [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
 public static class ReflectionHelper {
-	
 	/// <summary>
 	/// Returns all properties (including from base classes) that are annotated with the given attribute type.
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static IEnumerable<PropertyInfo> GetPropertyWithAnyAttribute<TAttribute>(Type typeToInspect) where TAttribute : Attribute {
 		ArgumentNullException.ThrowIfNull(typeToInspect);
 		HashSet<PropertyInfo> properties = typeToInspect.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance).ToHashSet();
@@ -31,6 +31,7 @@ public static class ReflectionHelper {
 	/// <summary>
 	/// Returns all methods (including from base classes) that are annotated with the given attribute type.
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static IEnumerable<MethodInfo> GetMethodWithAnyAttribute<TAttribute>(Type typeToInspect) where TAttribute : Attribute {
 		ArgumentNullException.ThrowIfNull(typeToInspect);
 
@@ -43,7 +44,7 @@ public static class ReflectionHelper {
 	/// Returns the current value of a static field or property with the given name
 	/// </summary>
 	/// <exception cref="ArgumentException">If no static member is found with the given name</exception>
-	public static TReturn? GetStaticFieldOrPropertyValue<TReturn, TType>(String name) {
+	public static TReturn? GetStaticFieldOrPropertyValue<TReturn, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] TType>(String name) {
 		PropertyInfo? property = typeof(TType)
 			.GetProperties(BindingFlags.FlattenHierarchy | BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
 			.FirstOrDefault(prop => prop.Name == name);
@@ -119,7 +120,14 @@ public static class ReflectionHelper {
 		return TrySetFieldOrPropertyValue(obj.GetType(), obj, name, mustBeDefault, factory, out value);
 	}
 
-	private static Boolean TrySetFieldOrPropertyValue<T>(Type objectType, Object obj, String name, Boolean mustBeDefault, Func<T> factory, out T? value) {
+	private static Boolean TrySetFieldOrPropertyValue<T>(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+		Type objectType,
+		Object obj,
+		String name,
+		Boolean mustBeDefault,
+		Func<T> factory,
+		out T? value) {
 		ArgumentNullException.ThrowIfNull(obj, nameof(obj));
 		ArgumentNullException.ThrowIfNull(factory, nameof(factory));
 
@@ -156,9 +164,9 @@ public static class ReflectionHelper {
 		}
 
 		if (objectType.BaseType != null && objectType.BaseType != typeof(Object)) {
-			return TrySetFieldOrPropertyValue(objectType.BaseType, obj, name, mustBeDefault, factory, out value); 
+			return TrySetFieldOrPropertyValue(objectType.BaseType, obj, name, mustBeDefault, factory, out value);
 		}
-		
+
 		value = default(T);
 		return false;
 	}

@@ -2,6 +2,7 @@ namespace Neco.Common.Extensions;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -117,6 +118,7 @@ public static partial class TypeExtensions {
 	/// <summary>
 	/// Checks if the given type, any of its base types, or any of its interfaces implements the given interface type.
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static Boolean ImplementsInterface(this Type? t, Type ifaceType) {
 		Type[] testTypeArguments = ifaceType.GenericTypeArguments;
 
@@ -147,6 +149,7 @@ public static partial class TypeExtensions {
 		return false;
 	}
 
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static Boolean ImplementsInterface(this Type t, String ifaceTypeFullName) {
 		if (String.Equals(t.GetFullName(), ifaceTypeFullName, StringComparison.Ordinal) || String.Equals(t.GetFullGenericName(), ifaceTypeFullName, StringComparison.Ordinal))
 			return true;
@@ -172,7 +175,7 @@ public static partial class TypeExtensions {
 	/// <param name="givenType"></param>
 	/// <param name="genericType"></param>
 	/// <returns></returns>
-	public static Boolean IsAssignableToGenericType(this Type givenType, Type genericType) {
+	public static Boolean IsAssignableToGenericType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]this Type givenType, Type genericType) {
 		Type[] interfaceTypes = givenType.GetInterfaces();
 
 		foreach (Type it in interfaceTypes) {
@@ -189,7 +192,7 @@ public static partial class TypeExtensions {
 		return IsAssignableToGenericType(baseType, genericType);
 	}
 
-	public static IEnumerable<MethodInfo> GetMethodsIncludingSuperInterfaces(this Type type) {
+	public static IEnumerable<MethodInfo> GetMethodsIncludingSuperInterfaces([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicMethods)]this Type type) {
 		foreach (MethodInfo? method in type.GetMethods()) {
 			yield return method;
 		}

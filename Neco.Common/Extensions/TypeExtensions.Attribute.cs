@@ -2,6 +2,7 @@ namespace Neco.Common.Extensions;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -14,12 +15,14 @@ public static partial class TypeExtensions {
 	/// <para>Returns the custom attributes including attributes from implemented interfaces for the given method.</para>
 	/// <para>If the same attribute is defined in multiple locations, it will be contained multiple times</para>
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static IEnumerable<T> GetCustomAttributesIncludingBaseInterfaces<T>(this MemberInfo mi) => GetCustomAttributesIncludingBaseInterfaces(mi, typeof(T)).Cast<T>();
 
 	/// <summary>
 	/// <para>Returns the custom attributes including attributes from implemented interfaces for the given method.</para>
 	/// <para>If the same attribute is defined in multiple locations, it will be contained multiple times</para>
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static IEnumerable<Attribute> GetCustomAttributesIncludingBaseInterfaces(this MemberInfo mi, Type attributeType) {
 		IEnumerable<Attribute> baseAndInheritedAttributes = mi.GetCustomAttributes(attributeType, true).Cast<Attribute>();
 		Type? reflectedType = mi.ReflectedType;
@@ -48,7 +51,7 @@ public static partial class TypeExtensions {
 	/// <para>Gets the custom attributes including attributes from implemented interfaces.</para>
 	/// <para>If the same attribute is defined in multiple locations, it will be contained multiple times</para>
 	/// </summary>
-	public static IEnumerable<T> GetCustomAttributesIncludingBaseInterfaces<T>(this Type type) {
+	public static IEnumerable<T> GetCustomAttributesIncludingBaseInterfaces<T>([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] this Type type) {
 		Type attributeType = typeof(T);
 		return type.GetCustomAttributes(attributeType, true).Union(type.GetInterfaces().SelectMany(interfaceType => interfaceType.GetCustomAttributes(attributeType, true))).Cast<T>();
 	}
@@ -57,6 +60,7 @@ public static partial class TypeExtensions {
 	/// <para>Returns the custom attributes including attributes from implemented interfaces for the given method.</para>
 	/// <para>If the same attribute is defined in multiple locations, it will be contained multiple times</para>
 	/// </summary>
+	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
 	public static IEnumerable<Attribute> GetCustomAttributesIncludingBaseInterfaces(this MemberInfo mi, String fullAttributeTypeName) {
 		return mi
 			.GetCustomAttributesIncludingBaseInterfaces(typeof(Attribute))
