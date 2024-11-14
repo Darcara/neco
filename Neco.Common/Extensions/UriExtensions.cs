@@ -10,7 +10,7 @@ public static class UriExtensions {
 	/// </summary>
 	public static String[] SegmentsWithoutDelimiter(this Uri uri) {
 		if (!uri.IsAbsoluteUri)
-			uri = new(UriHelper._exampleBaseUri, uri);
+			uri = new(UriHelper.ExampleBaseUri, uri);
 		String path = uri.GetComponents(UriComponents.Path | UriComponents.KeepDelimiter, UriFormat.UriEscaped);
 
 		if (path.Length == 0)
@@ -36,6 +36,5 @@ public static class UriExtensions {
 		}
 
 		return segments.ToArray();
-		;
 	}
 }
