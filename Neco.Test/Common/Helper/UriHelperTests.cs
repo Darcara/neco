@@ -38,10 +38,17 @@ public class UriHelperTests {
 	}
 
 	[TestCase("/test.php?b=2&a=1&sid=xxxxx#abc", "/test.php?a=1&b=2")]
-	[TestCase("https://www.abæcdöef.org/test.php?b=2&a=1&sid=xxxxx#abc", "xn--abcdef-qua4k.org/test.php?a=1&b=2")]
+	[TestCase("https://www.abæcdöef.org/test.php?b=2&a=1&sid=xxxxx#abc", "https://xn--abcdef-qua4k.org/test.php?a=1&b=2")]
+	[TestCase("https://www.abæcdöef.org/test.php", "https://xn--abcdef-qua4k.org/test.php")]
+	[TestCase("http://www.abæcdöef.org/test.php?", "https://xn--abcdef-qua4k.org/test.php")]
+	[TestCase("/?search=term1+term2+term3+order%3Adesc&b=2", "/?b=2&search=term1+term2+term3+order%3adesc")]
+	[TestCase("/?search=term1,term2,term3,order%3Adesc&b=2", "/?b=2&search=term1%2cterm2%2cterm3%2corder%3adesc")]
+	[TestCase("/?search=term1%2cterm2%2cterm3%2corder%3Adesc&b=2", "/?b=2&search=term1%2cterm2%2cterm3%2corder%3adesc")]
+	[TestCase("/", "/")]
+	[TestCase("/?", "/")]
 	public void NormalizesUriCorrectly(String uriString, String expected) {
 		Uri u = new(uriString, UriKind.RelativeOrAbsolute);
-		String normalized = UriHelper.NormalizeUri(u);
+		String normalized = UriHelper.NormalizeUri(u, UriHelper.NormalizationStrategy.Safe);
 		Assert.That(normalized, Is.EqualTo(expected));
 	}
 
