@@ -1,9 +1,9 @@
 namespace Neco.Benchmark;
 
 using BenchmarkDotNet.Attributes;
-using Neco.Benchmark.Config;
+using Neco.BenchmarkLibrary.Config;
 
-[Config(typeof(NetCoreConfig))]
+[Config(typeof(NetConfig))]
 public class MessagePassing {
 	
 }

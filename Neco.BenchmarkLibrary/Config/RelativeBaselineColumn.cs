@@ -1,4 +1,4 @@
-namespace Neco.Benchmark.Config;
+namespace Neco.BenchmarkLibrary.Config;
 
 using System;
 using System.Linq;

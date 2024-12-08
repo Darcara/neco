@@ -1,4 +1,4 @@
-namespace Neco.Benchmark.Config;
+namespace Neco.BenchmarkLibrary.Config;
 
 using System;
 using System.Linq;
@@ -18,7 +18,7 @@ public class RelativeAllocatedColumn : IColumn {
 			.MinBy(b => summary[b].GcStats.GetBytesAllocatedPerOperation(summary[b].BenchmarkCase));
 
 		if (index == null || summary[index].GcStats.GetBytesAllocatedPerOperation(index) == null || summary[benchmarkCase].GcStats.GetBytesAllocatedPerOperation(benchmarkCase) == null)
-			return "?";
+			return "-";
 
 		Int64 baselineStatistics = summary[index].GcStats.GetBytesAllocatedPerOperation(index) ?? 0;
 		Int64 caseStatistics = summary[benchmarkCase].GcStats.GetBytesAllocatedPerOperation(benchmarkCase) ?? 0;

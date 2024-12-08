@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <ProjectGuid>C8786D81-2C01-493C-9C97-FA9216034298</ProjectGuid>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <OutputType>Library</OutputType>
+        <IsTrimmable>false</IsTrimmable>
+        <IsAotCompatible>false</IsAotCompatible>
+        <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+        <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+        <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Title>Neco.BenchmarkLibrary</Title>
+        <PackageId>Neco.BenchmarkLibrary</PackageId>
+        <Authors>Darcara</Authors>
+        <Copyright>Copyright (c) Darcara</Copyright>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <Description>Necessary Code - Commonly required helpers for BenchmarkDotNet</Description>
+        <PackageProjectUrl>https://github.com/Darcara/neco</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Darcara/neco</RepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EmbedAllSources>true</EmbedAllSources>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+        <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.14.0" />
+        <PackageReference Include="Neco.Common" Version="0.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Neco.Test" />
+        <InternalsVisibleTo Include="Neco.Benchmark" />
+        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="README.md" />
+    </ItemGroup>
+
+
+</Project>

@@ -1,4 +1,4 @@
-namespace Neco.Benchmark.Config;
+namespace Neco.BenchmarkLibrary.Config;
 
 using System;
 using BenchmarkDotNet.Columns;
@@ -11,9 +11,9 @@ public class RelativeErrorColumn : IColumn {
 	#region Implementation of IColumn
 
 	public String GetValue(Summary summary, BenchmarkCase benchmarkCase, SummaryStyle style) {
-		Statistics? s = summary[benchmarkCase].ResultStatistics;
-		if (s == null) return "NA";
-		Double margin = new ConfidenceInterval(s.Mean, s.StandardError, s.N, ConfidenceLevel.L90).Margin;
+		Statistics? s = summary[benchmarkCase]?.ResultStatistics;
+		if (s == null) return "-";
+		Double margin = s.GetConfidenceInterval(ConfidenceLevel.L999).Margin;
 		return ((margin / s.Mean) * 1000).ToString("N3");
 	}
 
