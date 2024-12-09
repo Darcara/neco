@@ -41,7 +41,7 @@ public static class BenchmarkStarter {
 		return summary;
 	}
 
-	public static Summary Run<TBench, TConfig>(params String[] category) where TConfig : NetConfig, new() {
+	public static Summary Run<TBench, TConfig>(params String[] category) where TConfig : IConfig, new() {
 		TConfig config = new();
 		if (category.Length > 0)
 			config.AddFilter(new AnyCategoriesFilter(category));
