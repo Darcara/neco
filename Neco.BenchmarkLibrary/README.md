@@ -1,6 +1,7 @@
 # NeCo - Necessary Code - Benchmarks
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/neco.benchmarklibrary)](https://www.nuget.org/packages/Neco.BenchmarkLibrary/)
+![GitHub License](https://img.shields.io/github/license/darcara/neco)
 
 A few helpers around [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
 

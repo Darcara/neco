@@ -54,11 +54,11 @@ public static class BenchmarkStarter {
 	}
 
 	public static Summary[] Run<T>(Assembly assembly, Boolean noOverwrite = false) where T : IConfig, new() {
-		return BenchmarkRunner.Run(assembly, new T(), noOverwrite ? null : ["--noOverwrite"]);
+		return BenchmarkRunner.Run(assembly, new T(), noOverwrite ? ["--noOverwrite"] : null);
 	}
 
 	public static Summary[] Run(Assembly assembly, Boolean noOverwrite = false) {
-		return BenchmarkRunner.Run(assembly, new NetConfig());
+		return BenchmarkRunner.Run(assembly, new NetConfig(), noOverwrite ? ["--noOverwrite"] : null);
 	}
 
 	public static void QuickBench(Assembly assembly) {
@@ -91,7 +91,7 @@ public static class BenchmarkStarter {
 			.Where(method => method.GetCustomAttributes(true).OfType<GlobalCleanupAttribute>().Any())
 			.ToArray();
 
-		var parameters = type
+		(String Name, Object?[] Values)[] parameters = type
 			.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 			.Where(field => field.GetCustomAttributes(true).OfType<ParamsAttribute>().Any())
 			.Select(field => (field.Name, field.GetCustomAttributes(true).OfType<ParamsAttribute>().Single().Values))
