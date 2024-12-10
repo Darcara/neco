@@ -32,7 +32,6 @@ internal sealed class ActiveHandlerTracker(LifetimeTrackingHttpMessageHandlerDec
 		if (Lifetime <= TimeSpan.Zero || Lifetime == Timeout.InfiniteTimeSpan) return;
 		
 		if (Interlocked.CompareExchange(ref _isTimerInitialized, 1, 0) == 0) {
-			// using var suppressedFlow = ExecutionContext.SuppressFlow();
 			_onExpiryCallback = onExpiryCallback;
 			_expiryTimer = new Timer(_timerCallback, this, Lifetime, Timeout.InfiniteTimeSpan);
 		}
