@@ -1,11 +1,12 @@
 namespace Neco.Common.Processing;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 public class BaseContext : IContext {
-	private readonly Dictionary<Object, Object> _features = new();
+	private readonly ConcurrentDictionary<Object, Object> _features = new();
 
 	/// <inheritdoc />
 	public void SetData<TKeyAndData>(TKeyAndData data) where TKeyAndData : notnull => SetData(typeof(TKeyAndData), data);
@@ -13,14 +14,14 @@ public class BaseContext : IContext {
 	/// <inheritdoc />
 	public void SetData<TKey, TData>(TKey key, TData data) where TKey : notnull {
 		ArgumentNullException.ThrowIfNull(key, nameof(key));
-		ArgumentNullException.ThrowIfNull(data, nameof(key));
+		ArgumentNullException.ThrowIfNull(data, nameof(data));
 		_features[key] = data;
 	}
 
 	/// <inheritdoc />
 	public void ClearData<TKey>(TKey key) where TKey : notnull {
 		ArgumentNullException.ThrowIfNull(key, nameof(key));
-		_features.Remove(key);
+		_features.Remove(key, out _);
 	}
 
 	/// <inheritdoc />
@@ -36,13 +37,14 @@ public class BaseContext : IContext {
 	}
 
 	/// <inheritdoc />
-	public TData? GetDataOrDefault<TKey, TData>(TKey key) where TKey : notnull {
+	[return: NotNullIfNotNull(nameof(valueIfNotFound))]
+	public TData? GetDataOrDefault<TKey, TData>(TKey key, TData? valueIfNotFound=default) where TKey : notnull {
 		ArgumentNullException.ThrowIfNull(key, nameof(key));
 		if (_features.TryGetValue(key, out Object? obj)) {
-			return (TData?)obj;
+			return (TData)obj;
 		}
 
-		return default(TData);
+		return valueIfNotFound;
 	}
 
 	/// <inheritdoc />
