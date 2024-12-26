@@ -356,7 +356,7 @@ internal class MockCompressionLookup : IFileCompressionLookup {
 	#region Implementation of IFileCompressionLookup
 
 	/// <inheritdoc />
-	public FileCompression DoesFileCompress(String fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
+	public FileCompression DoesFileCompress(ReadOnlySpan<Char> fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
 		return NextResult;
 	}
 

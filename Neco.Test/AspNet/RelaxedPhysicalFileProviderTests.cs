@@ -1,6 +1,4 @@
-﻿using NUnit.Framework;
-
-namespace Neco.Test.AspNet;
+﻿namespace Neco.Test.AspNet;
 
 using System;
 using System.IO;
@@ -8,6 +6,7 @@ using System.Linq;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
 using Neco.AspNet;
+using NUnit.Framework;
 
 [TestFixture]
 public class RelaxedPhysicalFileProviderTests {
@@ -67,7 +66,7 @@ public class RelaxedPhysicalFileProviderTests {
 		changeToken = fileProvider.Watch("*");
 		Assert.That(changeToken, Is.Not.Null);
 		Assert.That(changeToken.HasChanged, Is.False);
-		using FileStream? fs = File.Create("./TestData/deleteme", 1 , FileOptions.DeleteOnClose);
+		using FileStream fs = File.Create("./TestData/deleteme", 1 , FileOptions.DeleteOnClose);
 		fs.WriteByte(1);
 		fs.Flush();
 		Assert.That(() => changeToken.HasChanged, Is.True.After(100, 15));

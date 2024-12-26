@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Neco.Common.Helper;
 using NUnit.Framework;
@@ -28,9 +27,9 @@ public class ReflectionHelperTests {
 		ReflectionHelper.GetFieldOrPropertyValue<String>(this, memberName).Should().Be("Value");
 		ReflectionHelper.SetFieldOrPropertyValue(this, memberName, true, () => "AnotherValue");
 		ReflectionHelper.GetFieldOrPropertyValue<String>(this, memberName).Should().Be("Value");
-		ReflectionHelper.TrySetFieldOrPropertyValue(this, memberName, false, () => "AnotherValue", out var newValue).Should().BeTrue();
+		ReflectionHelper.TrySetFieldOrPropertyValue(this, memberName, false, () => "AnotherValue", out String? newValue).Should().BeTrue();
 		newValue.Should().Be("AnotherValue");
-		ReflectionHelper.TryGetFieldOrPropertyValue<String>(this, memberName, out var val).Should().BeTrue();
+		ReflectionHelper.TryGetFieldOrPropertyValue<String>(this, memberName, out String? val).Should().BeTrue();
 		val.Should().Be("AnotherValue");
 	}
 
@@ -42,7 +41,7 @@ public class ReflectionHelperTests {
 
 	[Test]
 	public void GetSetAbstractFieldsOrProperties() {
-		var obj = new BaseClass();
+		BaseClass obj = new();
 		ReflectionHelper.GetFieldOrPropertyValue<String>(obj, nameof(IBaseInterface.PublicProperty)).Should().BeNull();
 		ReflectionHelper.GetFieldOrPropertyValue<String>(obj, nameof(IBaseInterface.PublicSharedProperty)).Should().BeNull();
 		ReflectionHelper.GetFieldOrPropertyValue<String>(obj, nameof(IBaseInterface.PublicAbstractProperty)).Should().BeNull();

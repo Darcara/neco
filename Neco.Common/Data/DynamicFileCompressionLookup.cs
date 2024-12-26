@@ -14,17 +14,17 @@ public sealed class DynamicFileCompressionLookup : IFileCompressionLookup {
 	private readonly ConcurrentDictionary<String, FileExtensionStatistic> _dynamicStatistics = new(StringComparer.OrdinalIgnoreCase);
 
 	/// <inheritdoc />
-	public FileCompression DoesFileCompress(String fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
+	public FileCompression DoesFileCompress(ReadOnlySpan<Char> fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
 		return assumedDefault;
 	}
 
 	// Compress a chunk from MIDDLE of the file 80?k
 	// or https://stackoverflow.com/questions/7027022/how-to-efficiently-predict-if-data-is-compressible#
 	public void AddCompressionEstimate(FileInfo file) {
-		String extensionStr = StaticFileCompressionLookup.NormalizeFileExtension(file.Extension);
+		ReadOnlySpan<Char> extensionStr = StaticFileCompressionLookup.NormalizeFileExtension(file.Extension);
 		if (extensionStr.Length == 0) return;
 
-		if (_dynamicStatistics.TryGetValue(extensionStr, out FileExtensionStatistic statistics)) {
+		if (_dynamicStatistics.GetAlternateLookup<ReadOnlySpan<Char>>().TryGetValue(extensionStr, out FileExtensionStatistic statistics)) {
 			if (statistics.SamplesCompressible + statistics.SamplesIncompressible >= 1000)
 				return;
 		}
@@ -41,7 +41,7 @@ public sealed class DynamicFileCompressionLookup : IFileCompressionLookup {
 		ArrayPool<Byte>.Shared.Return(buf);
 	}
 
-	public void AddCompressionEstimate(String fileExtension, ReadOnlySpan<Byte> sampleData) {
+	public void AddCompressionEstimate(ReadOnlySpan<Char> fileExtension, ReadOnlySpan<Byte> sampleData) {
 		Byte[] buf = ArrayPool<Byte>.Shared.Rent(MagicNumbers.MaxNonLohBufferSize * 2);
 		using MemoryStream compressedStream = new(buf);
 		using BrotliStream compressorStream = new(compressedStream, CompressionLevel.SmallestSize);
@@ -49,17 +49,17 @@ public sealed class DynamicFileCompressionLookup : IFileCompressionLookup {
 		compressorStream.Flush();
 		Double ratio = compressedStream.Length / (Double)sampleData.Length;
 
-		String extensionStr = StaticFileCompressionLookup.NormalizeFileExtension(fileExtension);
+		ReadOnlySpan<Char> extensionStr = StaticFileCompressionLookup.NormalizeFileExtension(fileExtension);
 		if (extensionStr.Length == 0) return;
 
-		AddCompressionEstimate(extensionStr, ratio);
+		AddCompressionEstimate(extensionStr.ToString(), ratio);
 		
 		ArrayPool<Byte>.Shared.Return(buf);
 	}
 
 	public void AddCompressionEstimate(String extensionStr, Double ratio) {
 		_dynamicStatistics.AddOrUpdate(extensionStr
-			, key => new FileExtensionStatistic(extensionStr, ratio)
+			, key => new FileExtensionStatistic(key, ratio)
 			, (_, statistic) => new FileExtensionStatistic(statistic, ratio));
 
 		// Console.WriteLine($"{extensionStr} => {ratio}");

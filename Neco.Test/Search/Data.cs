@@ -15,7 +15,7 @@ public static class Data {
 			yield return "GulliversTravel.txt";
 			yield return "MobyDick.txt";
 
-			foreach (var file in new DirectoryInfo(Path.Combine(Folder, "shakespeare")).EnumerateFiles()) {
+			foreach (FileInfo? file in new DirectoryInfo(Path.Combine(Folder, "shakespeare")).EnumerateFiles()) {
 				yield return Path.GetRelativePath(Path.GetFullPath(Folder), file.FullName);
 			}
 		}

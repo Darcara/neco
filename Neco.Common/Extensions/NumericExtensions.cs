@@ -43,6 +43,8 @@ public static class NumericExtensions {
 		format ??= "0.00";
 		Double factor = useSiPrefix ? 1000.0 : 1024.0;
 		String i = useSiPrefix ? String.Empty : "i";
+		String sign = bytes < 0 ? "-" : String.Empty;
+		bytes = Math.Abs(bytes);
 
 		Double kib = factor;
 		Double mib = kib * factor;
@@ -50,19 +52,19 @@ public static class NumericExtensions {
 		Double tib = gib * factor;
 
 		if (bytes >= tib) //TiB Range
-			return $"{(bytes / tib).ToString(format, CultureInfo.InvariantCulture)} T{i}B";
+			return $"{sign}{(bytes / tib).ToString(format, CultureInfo.InvariantCulture)} T{i}B";
 
 		if (bytes >= gib) //GiB Range
-			return $"{(bytes / gib).ToString(format, CultureInfo.InvariantCulture)} G{i}B";
+			return $"{sign}{(bytes / gib).ToString(format, CultureInfo.InvariantCulture)} G{i}B";
 
 		if (bytes >= mib) //MiB Range
-			return $"{(bytes / mib).ToString(format, CultureInfo.InvariantCulture)} M{i}B";
+			return $"{sign}{(bytes / mib).ToString(format, CultureInfo.InvariantCulture)} M{i}B";
 
 		if (bytes >= kib) //KiB Range
-			return $"{(bytes / kib).ToString(format, CultureInfo.InvariantCulture)} K{i}B";
+			return $"{sign}{(bytes / kib).ToString(format, CultureInfo.InvariantCulture)} K{i}B";
 
 		//Bytes
-		return $"{bytes:0} Bytes";
+		return $"{sign}{bytes:0} Bytes";
 	}
 
 	#endregion

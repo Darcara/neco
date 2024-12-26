@@ -23,5 +23,5 @@ public interface IFileCompressionLookup {
 	/// </summary>
 	/// <param name="fileExtension">The file extension to check. A starting dot '.' is optional</param>
 	/// <param name="assumedDefault">What should be returned if compressability is unknown. Defaults to <see cref="FileCompression.Compressible"/></param>
-	public FileCompression DoesFileCompress(String fileExtension, FileCompression assumedDefault = FileCompression.Compressible);
+	public FileCompression DoesFileCompress(ReadOnlySpan<Char> fileExtension, FileCompression assumedDefault = FileCompression.Compressible);
 }

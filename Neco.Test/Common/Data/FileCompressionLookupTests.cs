@@ -34,7 +34,9 @@ public class FileCompressionLookupTests {
 		StaticFileCompressionLookup.Instance.DoesFileCompress("").Should().Be(FileCompression.Compressible);
 	}
 	[Test]
-	public void StaticLookupThrowsOnNull() {
-		Assert.Throws<ArgumentNullException>(() => StaticFileCompressionLookup.Instance.DoesFileCompress(null));
+	public void StaticLookupReturnsDefaultOnNullEndEmpty() {
+		StaticFileCompressionLookup.Instance.DoesFileCompress(null, FileCompression.Unknown).Should().Be(FileCompression.Unknown);
+		StaticFileCompressionLookup.Instance.DoesFileCompress(String.Empty, FileCompression.Unknown).Should().Be(FileCompression.Unknown);
+		StaticFileCompressionLookup.Instance.DoesFileCompress(new ReadOnlySpan<Char>(), FileCompression.Unknown).Should().Be(FileCompression.Unknown);
 	}
 }

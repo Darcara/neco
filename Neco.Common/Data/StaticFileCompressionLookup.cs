@@ -21,29 +21,24 @@ public sealed class StaticFileCompressionLookup : IFileCompressionLookup {
 		"ODT", "OFR", "OFS", "OGG", "OGM", "OGV", "OPUS", "OTP", "OTS", "OTT", "PACK", "PAGES", "PAMP",
 		"PDN", "PET", "PNG", "PPTX", "PSPIMAGE", "QSM", "RA", "RAR", "RM", "RPM", "S7Z", "SDG", "SFT", "SNUPKG",
 		"SIT", "SITX", "STW", "SWF", "SWZ", "SY_", "TBZ2", "TC", "TGZ", "THMX", "TIB", "TIF", "TIFF", "TORRENT",
-		"TPM", "TRF", "TRP", "TS", "TXZ", "UNITYPACKAGE", "VDB", "VHD", "VOB", "VSIX", "VSV", "WAR", "WEBARCHIVE", 
-		"WEBM", "WEBP", "WHL", "WIM", "WMA", "WMV", "WMZ", "WOFF", "WOFF2", "WTV", "WV", "XAR", "XLSB", "XLSM", 
+		"TPM", "TRF", "TRP", "TS", "TXZ", "UNITYPACKAGE", "VDB", "VHD", "VOB", "VSIX", "VSV", "WAR", "WEBARCHIVE",
+		"WEBM", "WEBP", "WHL", "WIM", "WMA", "WMV", "WMZ", "WOFF", "WOFF2", "WTV", "WV", "XAR", "XLSB", "XLSM",
 		"XLSX", "XMF", "XPI", "XPS", "XZ", "Z", "ZIP", "ZIPX", "ZST",
 	}.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-	internal static String NormalizeFileExtension(String fileExtension) {
-#if NET9_0_OR_GREATER
-		// TODO: we can work with ReadOnlySpans (probably NET9) https://github.com/dotnet/runtime/issues/27229
-		#error Check ReadOnlySpanLookup in https://github.com/dotnet/runtime/issues/27229
-#endif
+	private static readonly FrozenSet<String>.AlternateLookup<ReadOnlySpan<Char>> _incompressibleExtensionsLookup = _incompressibleExtensions.GetAlternateLookup<ReadOnlySpan<Char>>();
 
+	internal static ReadOnlySpan<Char> NormalizeFileExtension(ReadOnlySpan<Char> fileExtension) {
 		if (fileExtension.Length == 0) return String.Empty;
-		String extensionStr = fileExtension;
-		if (extensionStr[0] == '.') extensionStr = extensionStr.Substring(1);
-
-		return extensionStr;
+		if (fileExtension[0] == '.') return fileExtension.Slice(1);
+		return fileExtension;
 	}
 
 	/// <inheritdoc />
-	public FileCompression DoesFileCompress(String fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
-		ArgumentNullException.ThrowIfNull(fileExtension);
-		String extensionStr = NormalizeFileExtension(fileExtension);
+	public FileCompression DoesFileCompress(ReadOnlySpan<Char> fileExtension, FileCompression assumedDefault = FileCompression.Compressible) {
+		if (fileExtension.Length == 0) return assumedDefault;
+		ReadOnlySpan<Char> extensionStr = NormalizeFileExtension(fileExtension);
 		if (extensionStr.Length == 0) return assumedDefault;
-		return _incompressibleExtensions.Contains(extensionStr) ? FileCompression.Incompressible : assumedDefault;
+		return _incompressibleExtensionsLookup.Contains(extensionStr) ? FileCompression.Incompressible : assumedDefault;
 	}
 }

@@ -4,7 +4,6 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using FluentAssertions;
 using Neco.Common.Data.Web;
 using NUnit.Framework;
@@ -82,7 +81,7 @@ public class HttpClientFactoryTests : ATest {
 
 	[Test]
 	public void Interface() {
-		var config = new HttpClientFactoryConfiguration() {
+		HttpClientFactoryConfiguration config = new() {
 			HandlerLifetime = TimeSpan.Zero,
 			CleanupInterval = TimeSpan.Zero,
 			GarbageCollectAfterDisposedHandler = true,

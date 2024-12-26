@@ -88,7 +88,7 @@ public static partial class TypeExtensions {
 	private static String CleanName(String s) {
 		// Fullname for lambdas is Some.Namespace.ClassName`1+NestedClass`1+<>c__DisplayClass9_0
 		// Name is '<>c__DisplayClass9_0' and it might be generic
-		var idxGenericMark = s.IndexOf('`', StringComparison.Ordinal);
+		Int32 idxGenericMark = s.IndexOf('`', StringComparison.Ordinal);
 		if (idxGenericMark == -1)
 			return s;
 		return s.Substring(0, idxGenericMark);

@@ -19,15 +19,15 @@ public class CompressedStaticFilesTests :ATest {
 
 	[MemberNotNull(nameof(_simpleActionQueue))]
 	private CompressedStaticFilesMiddleware CreateMiddleware() {
-		MockWebHostEnvironment? webHostEnv = new MockWebHostEnvironment(new PhysicalFileProvider(Path.GetFullPath("./TestData")));
-		CompressedStaticFilesOptions? options = new CompressedStaticFilesOptions();
+		MockWebHostEnvironment webHostEnv = new(new PhysicalFileProvider(Path.GetFullPath("./TestData")));
+		CompressedStaticFilesOptions options = new();
 
 		_simpleActionQueue = new SimpleActionQueue(GetLogger<SimpleActionQueue>());
 		return new(_ => Task.FromException(new Exception("End of pipeline reached")), webHostEnv, Options.Create(options), LoggerFactory, _simpleActionQueue);
 	}
 	
 	private HttpContext CreateContext(String path, String method = "GET") {
-		DefaultHttpContext? httpContext = new DefaultHttpContext();
+		DefaultHttpContext httpContext = new();
 		httpContext.Response.Body = new MemoryStream();
 		httpContext.Request.Path = path;
 		httpContext.Request.Method = method;

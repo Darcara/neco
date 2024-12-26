@@ -64,7 +64,7 @@ public static class CertificateHelper {
 	}
 
 	public static void CreateSelfSignedRootCertificateToFile(String saveTo, String cn, IPAddress? ip = null, DateTime? validUntil = null) {
-		using var rootCert = CreateExportableSelfSignedRootCertificate(cn, ip, validUntil);
+		using X509Certificate2 rootCert = CreateExportableSelfSignedRootCertificate(cn, ip, validUntil);
 		// export
 		SaveCert(rootCert, saveTo, true);
 

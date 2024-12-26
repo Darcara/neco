@@ -49,7 +49,7 @@ public static class StreamExtensions {
 			Int64 totalBytesCopied = 0;
 			Int32 bytesRead;
 			while ((bytesRead = source.Read(buffer, 0, buffer.Length)) != 0) {
-				var destinationSpan = destination.GetSpan(bytesRead);
+				Span<Byte> destinationSpan = destination.GetSpan(bytesRead);
 				buffer.AsSpan(0, bytesRead).CopyTo(destinationSpan);
 				destination.Advance(bytesRead);
 				totalBytesCopied += bytesRead;

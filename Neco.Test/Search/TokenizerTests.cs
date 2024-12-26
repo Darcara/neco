@@ -12,7 +12,7 @@ public class TokenizerTests {
 	public void WhitespaceTokenizer() {
 		String content = Helper.ReadCompressedFileAsString(Data.AvailableDocuments.First());
 		String[] words = new SimpleWhitespaceSplitter().Split(content);
-		var wsIndex = words.FindIndex(String.IsNullOrWhiteSpace);
+		Int32 wsIndex = words.FindIndex(String.IsNullOrWhiteSpace);
 		Assert.That(wsIndex, Is.Negative, () => String.Join("###", words.Skip(wsIndex-5). Take(10)));
 		Assert.That(words.All(t => !String.IsNullOrWhiteSpace(t)), Is.True);
 	}

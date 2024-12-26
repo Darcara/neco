@@ -2,7 +2,6 @@ namespace Neco.Test.Common.Data;
 
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Neco.Common.Data;
@@ -12,7 +11,7 @@ using NUnit.Framework;
 public class BoundedReadOnlyStreamTests {
 	[Test]
 	public void InterfaceTests() {
-		using MemoryStream baseStream = new MemoryStream(new Byte[2048]);
+		using MemoryStream baseStream = new(new Byte[2048]);
 		using Stream s = new BoundedReadOnlyStream(baseStream, 512, 1024, true);
 		StreamTestHelper.CanReadSeak(s);
 	}

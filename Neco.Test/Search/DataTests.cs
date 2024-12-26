@@ -34,9 +34,9 @@ public class DataTests {
 		Dictionary<UInt64, List<String>> hashes = new();
 		Int64 numCollisions = 0;
 		foreach (String word in words) {
-			var hash = WyHashFinal3.HashOneOffLong(Encoding.UTF8.GetBytes(word));
+			UInt64 hash = WyHashFinal3.HashOneOffLong(Encoding.UTF8.GetBytes(word));
 			if (!hashes.TryAdd(hash, new(1){word})) {
-				var collisionList = hashes[hash];
+				List<String> collisionList = hashes[hash];
 				collisionList.Add(word);
 				Console.WriteLine($"There are {collisionList.Count} collisions for hash {hash:X8}: " + String.Join(", ", collisionList));
 				++numCollisions;

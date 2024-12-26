@@ -106,7 +106,7 @@ public class MiddlewarePipelineTests {
 		MiddlewareDelegate<String> Chainer(MiddlewareDelegate<String> next) => s => next($"{s}->[Chain]");
 		pipeline.AppendMiddleware(Chainer);
 		pipeline.AppendMiddleware(next => s => next($"{s}->[Chain]"));
-		var middleware = new ClassMiddleware();
+		ClassMiddleware middleware = new();
 		pipeline.AppendMiddleware(next => s => middleware.Handle(next, s));
 		pipeline.Build();
 		ex = Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.CallAsync("CALL"));
@@ -151,7 +151,7 @@ public class MiddlewarePipelineTests {
 		pipeline.AfterMapThrow();
 		pipeline.Build();
 		await pipeline.CallAsync("CALL");
-		var ex = Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.CallAsync("!"));
+		InvalidOperationException? ex = Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.CallAsync("!"));
 		await Console.Out.WriteLineAsync(ex?.ToString());
 	}
 	

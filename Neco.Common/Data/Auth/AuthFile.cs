@@ -176,7 +176,7 @@ public class AuthFile : IAuthenticationProvider{
 	/// <exception cref="ArgumentException">If <see cref="username"/> is null or empty</exception>
 	public void ChangeUser(String username, Int32 authLevel) {
 		ArgumentException.ThrowIfNullOrEmpty(username);
-		if (!_authFileEntries.TryGetValue(username, out var authFileEntry))
+		if (!_authFileEntries.TryGetValue(username, out AuthFileEntry? authFileEntry))
 			return;
 
 		_authFileEntries[username] = authFileEntry.WithAuthLevel(authLevel);

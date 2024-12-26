@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using AnyAscii;
 using DawgSharp;
@@ -24,7 +23,7 @@ public partial class DawgTests {
 
 	[Test]
 	public void DawgSimpleSearch() {
-		List<String>? documents = Data.AvailableDocuments.ToList();
+		List<String> documents = Data.AvailableDocuments.ToList();
 		MultiDawg<Int32> dawg = BuildDawg();
 		
 		WriteMatches("BLOOD");

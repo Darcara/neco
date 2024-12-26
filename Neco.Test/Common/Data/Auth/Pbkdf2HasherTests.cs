@@ -84,7 +84,7 @@ public class Pbkdf2HasherTests {
 	[Test]
 	public void ResistentAgainstCraftedPayloads_SaltSize() {
 		Pbkdf2Hasher hasher = new();
-		var evilByteArraySaltSize = new Byte[40];
+		Byte[] evilByteArraySaltSize = new Byte[40];
 		RandomNumberGenerator.Fill(evilByteArraySaltSize);
 		evilByteArraySaltSize[0] = 254;
 		hasher
@@ -96,7 +96,7 @@ public class Pbkdf2HasherTests {
 	[Test]
 	public void ResistentAgainstCraftedPayloads_NegativeIterations() {
 		Pbkdf2Hasher hasher = new();
-		var evilByteArrayIterationsNegative = new Byte[40];
+		Byte[] evilByteArrayIterationsNegative = new Byte[40];
 		evilByteArrayIterationsNegative[0] = 0;
 		BinaryPrimitives.WriteInt32LittleEndian(evilByteArrayIterationsNegative.AsSpan(1), 0);
 		hasher

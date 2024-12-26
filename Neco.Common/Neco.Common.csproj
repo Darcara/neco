@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <ProjectGuid>680BEB80-2FE8-4DB3-853B-3746893D360D</ProjectGuid>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackageVersion>0.1.2</PackageVersion>
+        <PackageVersion>0.2.0</PackageVersion>
         <Title>Neco.Common</Title>
         <PackageId>Neco.Common</PackageId>
         <Authors>Darcara</Authors>
@@ -38,12 +38,12 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.*"/>
-        <PackageReference Include="System.Threading.RateLimiting" Version="8.*" PrivateAssets="All"/>
-        <PackageReference Include="System.IO.Pipelines" Version="8.*" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.0" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Pipelines" Version="9.0.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Neco.Test"/>

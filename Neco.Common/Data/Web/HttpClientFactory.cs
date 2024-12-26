@@ -9,6 +9,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using HttpHandlerConfigurator = System.Action<System.String, System.Net.Http.SocketsHttpHandler, System.Collections.Generic.List<System.IDisposable>>;
+using HttpHandlerDecorator = System.Func<System.String, System.Net.Http.HttpMessageHandler, System.Net.Http.HttpMessageHandler>;
 using HttpClientConfigurator = System.Action<System.String, System.Net.Http.HttpClient>;
 
 /// <summary>
@@ -71,18 +72,33 @@ public partial class HttpClientFactory : IHttpClientFactory, IHttpMessageHandler
 	}
 
 	private ActiveHandlerTracker HandlerFactory(String name) {
-		SocketsHttpHandler handler = new();
+		SocketsHttpHandler originalHandler = new();
 
 		List<IDisposable> disposables = [];
 		if (_configuration.HttpHandlerConfigurators.TryGetValue(KnownClientNames.Always, out List<HttpHandlerConfigurator>? configurators)) {
 			for (Int32 i = 0; i < configurators.Count; i++) {
-				configurators[i].Invoke(name, handler, disposables);
+				configurators[i].Invoke(name, originalHandler, disposables);
 			}
 		}
 
 		if (_configuration.HttpHandlerConfigurators.TryGetValue(name, out configurators)) {
 			for (Int32 i = 0; i < configurators.Count; i++) {
-				configurators[i].Invoke(name, handler, disposables);
+				configurators[i].Invoke(name, originalHandler, disposables);
+			}
+		}
+		
+		HttpMessageHandler handler = originalHandler;
+		if (_configuration.HttpHandlerDecorators.TryGetValue(KnownClientNames.Always, out List<HttpHandlerDecorator>? decorators)) {
+			for (Int32 i = 0; i < decorators.Count; i++) {
+				HttpMessageHandler? decoratedHandler = decorators[i].Invoke(name, handler);
+				handler = decoratedHandler ?? throw new InvalidOperationException($"HttpMessageHandler decorator must not return null for {name}");
+			}
+		}
+		
+		if (_configuration.HttpHandlerDecorators.TryGetValue(name, out decorators)) {
+			for (Int32 i = 0; i < decorators.Count; i++) {
+				HttpMessageHandler? decoratedHandler = decorators[i].Invoke(name, handler);
+				handler = decoratedHandler ?? throw new InvalidOperationException($"HttpMessageHandler decorator must not return null for {name}");
 			}
 		}
 

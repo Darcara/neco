@@ -104,9 +104,9 @@ public class WyHashFinal3Tests : AHashTest {
 	public void SecretConstructsCorrectlry() {
 		Span<UInt64> secret = new UInt64[4].AsSpan();
 		WyHashFinal3.MakeSecret(0x1234, secret);
-		WyHashSecret s1 = new WyHashSecret(secret);
-		WyHashSecret s2 = new WyHashSecret(secret[0], secret[1], secret[2], secret[3]);
-		WyHashSecret s = new WyHashSecret();
+		WyHashSecret s1 = new(secret);
+		WyHashSecret s2 = new(secret[0], secret[1], secret[2], secret[3]);
+		WyHashSecret s = new();
 
 		Assert.That(s1, Is.EqualTo(s2));
 		Assert.That(s2 == s1, Is.True);

@@ -57,7 +57,7 @@ public class SimpleUsageTests {
 		ObjectMethodExecutor ome = ObjectMethodExecutor.Create(GetType().GetMethod(nameof(AsyncMethodWithParam), BindingFlags.NonPublic | BindingFlags.Instance)!, GetType().GetTypeInfo());
 		Assert.That(ome.AsyncResultType, Is.EqualTo(typeof(Int64)));
 		Assert.That(ome.IsMethodAsync, Is.True);
-		Object? returnValue = await ome.ExecuteAsync(this, new Object[] { 4 });
+		Object returnValue = await ome.ExecuteAsync(this, new Object[] { 4 });
 		Assert.That(returnValue, Is.EqualTo(4));
 		Assert.That(_testNumber, Is.EqualTo(4));
 	}
@@ -66,7 +66,7 @@ public class SimpleUsageTests {
 	public async Task CanCallAsyncTaskMethodWithParams() {
 		ObjectMethodExecutor ome = ObjectMethodExecutor.Create(GetType().GetMethod(nameof(AsyncTaskMethodWithParam), BindingFlags.NonPublic | BindingFlags.Instance)!, GetType().GetTypeInfo());
 		Assert.That(ome.IsMethodAsync, Is.True);
-		Object? returnValue = await ome.ExecuteAsync(this, new Object[] { 4 });
+		Object returnValue = await ome.ExecuteAsync(this, new Object[] { 4 });
 		Assert.That(returnValue, Is.Null);
 		Assert.That(_testNumber, Is.EqualTo(4));
 	}
