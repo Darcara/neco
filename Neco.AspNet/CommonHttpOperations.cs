@@ -1,6 +1,7 @@
 ﻿namespace Neco.AspNet;
 
 using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -14,7 +15,7 @@ public static class NotModifiedResult {
 public static class CommonHttpOperations {
 	// Slightly faster than using RequestHeaders from 'GetTypedHeaders'
 	public static Int32 IfNoneMatch(IHeaderDictionary requestHeaders, EntityTagHeaderValue? etag) {
-		var ifNoneMatchHeader = requestHeaders.IfNoneMatch;
+		StringValues ifNoneMatchHeader = requestHeaders.IfNoneMatch;
 		if (StringValues.IsNullOrEmpty(ifNoneMatchHeader)) return NotModifiedResult.HeaderNotPresent;
 
 		if (ifNoneMatchHeader.Count == 1 && StringSegment.Equals(ifNoneMatchHeader[0], EntityTagHeaderValue.Any.Tag, StringComparison.OrdinalIgnoreCase)) {
@@ -23,9 +24,9 @@ public static class CommonHttpOperations {
 
 		if (etag == null) return NotModifiedResult.Modified;
 
-		if (EntityTagHeaderValue.TryParseList(ifNoneMatchHeader, out var ifNoneMatchEtags)) {
-			for (var i = 0; i < ifNoneMatchEtags.Count; i++) {
-				var requestETag = ifNoneMatchEtags[i];
+		if (EntityTagHeaderValue.TryParseList(ifNoneMatchHeader, out IList<EntityTagHeaderValue>? ifNoneMatchEtags)) {
+			for (Int32 i = 0; i < ifNoneMatchEtags.Count; i++) {
+				EntityTagHeaderValue requestETag = ifNoneMatchEtags[i];
 				if (etag.Compare(requestETag, useStrongComparison: false)) {
 					return NotModifiedResult.NotModified;
 				}
@@ -44,7 +45,7 @@ public static class CommonHttpOperations {
 	}
 
 	public static Int32 IfModifiedSince(IHeaderDictionary requestHeaders, DateTimeOffset? objectDateTime) {
-		var ifModifiedSince = requestHeaders.IfModifiedSince;
+		StringValues ifModifiedSince = requestHeaders.IfModifiedSince;
 		if (StringValues.IsNullOrEmpty(ifModifiedSince)) return NotModifiedResult.HeaderNotPresent;
 
 		if (objectDateTime == null) return NotModifiedResult.Modified;

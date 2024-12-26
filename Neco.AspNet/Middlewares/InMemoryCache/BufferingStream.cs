@@ -37,7 +37,7 @@ public class BufferingStream : Stream {
 	public List<Byte[]> GetDataSegments() {
 		if (_dataSegments == null) throw new InvalidOperationException();
 		if (_currentBuffer != null && _currentPosition > 0) {
-			var partialBuffer = new Byte[_currentPosition];
+			Byte[] partialBuffer = new Byte[_currentPosition];
 			Array.Copy(_currentBuffer, 0, partialBuffer, 0, _currentPosition);
 			_dataSegments.Add(partialBuffer);
 			_currentPosition = 0;
@@ -136,7 +136,7 @@ public class BufferingStream : Stream {
 			if (Length + 1 > _maxBytesToBuffer) {
 				DisableBuffering();
 			} else {
-				var buffer = ArrayPool<Byte>.Shared.Rent(1);
+				Byte[] buffer = ArrayPool<Byte>.Shared.Rent(1);
 				buffer[0] = value;
 				WriteToBuffer(buffer.AsSpan(0, 1));
 			}

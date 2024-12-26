@@ -1,6 +1,7 @@
 namespace Neco.AspNet.Middlewares.InMemoryCache;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,21 +25,21 @@ public class InMemoryCacheMiddleware {
 	private readonly RequestDelegate _next;
 
 	// see https://tools.ietf.org/html/rfc7232#section-4.1
-	private static readonly String[] _headersToIncludeIn304 = { "Cache-Control", "Content-Location", "Date", "ETag", "Expires", "Vary" };
+	private static readonly String[] _headersToIncludeIn304 = ["Cache-Control", "Content-Location", "Date", "ETag", "Expires", "Vary"];
 
 	/// The segment size for buffering the response body in bytes. The default is set to 80 KB (81920 Bytes) to avoid allocations on the LOH.
 	private const Int32 _bodySegmentSize = MagicNumbers.MaxNonLohBufferSize;
 
 	// private readonly InMemoryCacheOptions _options;
 	private readonly ILogger<InMemoryCacheMiddleware> _logger;
-	private readonly MemoryCache _cache;
+	private readonly IMemoryCache _cache;
 	private readonly ICachingPolicy _cachingPolicy;
 	private readonly ObjectPool<StringBuilder> _keyBuildPool;
 	private readonly Boolean _useCaseSensitivePaths;
 	private readonly Int64 _maxObjectCachSize;
 
 	public InMemoryCacheMiddleware(RequestDelegate next, IOptions<InMemoryCacheOptions> options, ObjectPoolProvider poolProvider, ILoggerFactory loggerFactory) {
-		if (options == null) throw new ArgumentNullException(nameof(options));
+		ArgumentNullException.ThrowIfNull(options);
 		_next = next ?? throw new ArgumentNullException(nameof(next));
 		// _options = options.Value ?? throw new ArgumentNullException(nameof(options));;
 		_logger = loggerFactory.CreateLogger<InMemoryCacheMiddleware>();
@@ -86,10 +87,10 @@ public class InMemoryCacheMiddleware {
 				}
 
 				// Create the cache entry now
-				var response = context.Response;
-				var headers = response.Headers;
+				HttpResponse response = context.Response;
+				IHeaderDictionary headers = response.Headers;
 				if (!HeaderUtilities.TryParseSeconds(headers.CacheControl, CacheControlHeaderValue.SharedMaxAgeString, out TimeSpan? responseValidFor) && !HeaderUtilities.TryParseSeconds(headers.CacheControl, CacheControlHeaderValue.MaxAgeString, out responseValidFor)) {
-					if (HeaderUtilities.TryParseDate(headers.Expires.ToString(), out var expires))
+					if (HeaderUtilities.TryParseDate(headers.Expires.ToString(), out DateTimeOffset expires))
 						responseValidFor = expires - responseStartTime;
 					else
 						responseValidFor = TimeSpan.FromSeconds(10);
@@ -97,15 +98,15 @@ public class InMemoryCacheMiddleware {
 
 				String key = CreateCacheKey(context);
 				Int64 estimatedSizeInCache = bufferingStream.Length;
-				var originalHeaders = new HeaderDictionary();
-				foreach (var header in headers) {
+				HeaderDictionary originalHeaders = new();
+				foreach (KeyValuePair<String, StringValues> header in headers) {
 					if (!String.Equals(header.Key, HeaderNames.Age, StringComparison.OrdinalIgnoreCase)) {
 						originalHeaders[header.Key] = header.Value;
 					}
 				}
 
 				// Finalize the cache entry
-				var contentLength = context.Response.ContentLength;
+				Int64? contentLength = context.Response.ContentLength;
 				if (!contentLength.HasValue || contentLength == bufferingStream.Length || (bufferingStream.Length == 0 && HttpMethods.IsHead(context.Request.Method))) {
 					// Add a content-length if required
 					if (!response.ContentLength.HasValue && StringValues.IsNullOrEmpty(response.Headers.TransferEncoding)) {
@@ -115,9 +116,9 @@ public class InMemoryCacheMiddleware {
 					EntityTagHeaderValue? etag = null;
 					if (!StringValues.IsNullOrEmpty(headers.ETag))
 						etag = new(headers.ETag.ToString());
-					HeaderUtilities.TryParseDate(headers.LastModified.ToString(), out var lastModified);
-					
-					var cacheEntry = new CacheEntry(responseStartTime.DateTime, response.StatusCode, originalHeaders,etag,lastModified, bufferingStream.Length, bufferingStream.Length > 0 ? bufferingStream.GetDataSegments() : null);
+					HeaderUtilities.TryParseDate(headers.LastModified.ToString(), out DateTimeOffset lastModified);
+
+					CacheEntry cacheEntry = new(responseStartTime.DateTime, response.StatusCode, originalHeaders, etag, lastModified, bufferingStream.Length, bufferingStream.Length > 0 ? bufferingStream.GetDataSegments() : null);
 
 					_cache.Set(key, cacheEntry, new MemoryCacheEntryOptions {
 						AbsoluteExpirationRelativeToNow = responseValidFor.Value,
@@ -136,12 +137,12 @@ public class InMemoryCacheMiddleware {
 
 	private async Task<Boolean> TryServeFromCache(HttpContext context) {
 		String key = CreateCacheKey(context);
-		var entry = _cache.Get(key);
+		Object? entry = _cache.Get(key);
 
 		if (entry is not CacheEntry cacheEntry)
 			return false;
 
-		var cachedEntryAge = DateTime.UtcNow - cacheEntry.Created;
+		TimeSpan cachedEntryAge = DateTime.UtcNow - cacheEntry.Created;
 		cachedEntryAge = cachedEntryAge > TimeSpan.Zero ? cachedEntryAge : TimeSpan.Zero;
 
 		if (_cachingPolicy.IsCachedEntryFresh(context, cacheEntry, cachedEntryAge)) {
@@ -150,7 +151,7 @@ public class InMemoryCacheMiddleware {
 				_logger.NotModifiedServed();
 				context.Response.StatusCode = StatusCodes.Status304NotModified;
 
-				foreach (var headerToInclude in _headersToIncludeIn304) {
+				foreach (String headerToInclude in _headersToIncludeIn304) {
 					if (cacheEntry.OriginalHeaders.TryGetValue(headerToInclude, out StringValues values)) {
 						context.Response.Headers[headerToInclude] = values;
 					}
@@ -159,7 +160,7 @@ public class InMemoryCacheMiddleware {
 				HttpResponse response = context.Response;
 				// Copy the cached status code and response headers
 				response.StatusCode = cacheEntry.StatusCode;
-				foreach (var header in cacheEntry.OriginalHeaders) {
+				foreach (KeyValuePair<String, StringValues> header in cacheEntry.OriginalHeaders) {
 					response.Headers[header.Key] = header.Value;
 				}
 
@@ -197,17 +198,15 @@ public class InMemoryCacheMiddleware {
 
 	private Boolean ContentIsNotModified(HttpContext context, CacheEntry cacheEntry) {
 		IHeaderDictionary headers = context.Request.Headers;
-		
+
 		return CommonHttpOperations.IfNoneMatch(headers, cacheEntry.Etag) == NotModifiedResult.NotModified || CommonHttpOperations.IfModifiedSince(headers, cacheEntry.LastModified) == NotModifiedResult.NotModified;
 	}
 
 	private String CreateCacheKey(HttpContext context) {
-		if (context == null) {
-			throw new ArgumentNullException(nameof(context));
-		}
+		ArgumentNullException.ThrowIfNull(context);
 
-		var request = context.Request;
-		var builder = _keyBuildPool.Get();
+		HttpRequest request = context.Request;
+		StringBuilder builder = _keyBuildPool.Get();
 
 		try {
 			builder
@@ -246,10 +245,9 @@ public class InMemoryCacheMiddleware {
 	}
 
 	private DateTimeOffset OnStartResponse(HttpContext context, BufferingStream stream) {
-			var headers = context.Response.Headers;
+		IHeaderDictionary headers = context.Response.Headers;
 		Boolean hasDateHeaderSet = HeaderUtilities.TryParseDate(headers.Date.ToString(), out DateTimeOffset responseStartTime);
-		if(!hasDateHeaderSet) responseStartTime = DateTimeOffset.UtcNow;
-		
+		if (!hasDateHeaderSet) responseStartTime = DateTimeOffset.UtcNow;
 
 		if (!_cachingPolicy.IsResponseCacheable(context, responseStartTime)) {
 			stream.DisableBuffering();

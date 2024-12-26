@@ -1,6 +1,7 @@
 # NeCo - Necessary Code - AspNet
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/neco.aspnet)](https://www.nuget.org/packages/Neco.AspNet/)
+![GitHub License](https://img.shields.io/github/license/darcara/neco)
 
 ## CompressedStaticFiles
 
