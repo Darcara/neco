@@ -44,7 +44,4 @@ PerformanceHelper.GetPerformanceRough("SomeBenchmark.Method1", () => new SomeBen
 SomeBenchmark.Method1 35,757,090 ops in 5,000.001ms = clean per operation: 0.108µs or 9,298,494.945op/s with 24 Bytes per run and GC 102/0/0
 SomeBenchmark.Method1 TotalCPUTime per operation: 4,984.375ms or clean 9,336,433.859op/s for a factor of 0.997
 
-SomeBenchmark.Method2 21,123,454 ops in 5,000.001ms = clean per operation: 0.205µs or 4,873,048.375op/s with 24 Bytes per run and GC 60/0/0
-SomeBenchmark.Method2 TotalCPUTime per operation: 5,000.000ms or clean 4,873,049.836op/s for a factor of 1.000
-
 ```
