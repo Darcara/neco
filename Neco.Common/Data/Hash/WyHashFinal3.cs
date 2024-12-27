@@ -61,6 +61,7 @@ public readonly struct WyHashSecret {
 	#endregion
 }
 
+[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
 public unsafe class WyHashFinal3 : HashAlgorithm {
 	private static readonly Byte[] _seedLookupBytes = [15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240];
@@ -73,6 +74,7 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	private Int32 _byteBuffered;
 	private UInt64 _totalBytesProcessed;
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public WyHashFinal3() : this(0xAC8FDFCE8D7ED9DFUL, new WyHashSecret()) {
 	}
 
@@ -218,6 +220,7 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	}
 #endif
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static Byte[] HashOneOff(ReadOnlySpan<Byte> data, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		fixed (Byte* ptr = data) {
 			UInt64 hash = _wyhash(ptr, (UInt64)data.Length, seed, secret ?? new WyHashSecret());
@@ -227,6 +230,7 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 		}
 	}
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static void HashOneOff(ReadOnlySpan<Byte> data, Byte[] hashOutput, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		Debug.Assert(hashOutput.Length == 8);
 		fixed (Byte* ptr = data) {
@@ -238,16 +242,20 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	/// <summary>
 	/// Hashes the data into an unsigned long. Beware of endianess if comparing with <see cref="HashOneOff(System.ReadOnlySpan{byte},ulong,System.Nullable{Neco.Common.Data.Hash.WyHashSecret})">HashOneOff</see>
 	/// </summary>
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static UInt64 HashOneOffLong(ReadOnlySpan<Byte> data, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		fixed (Byte* ptr = data) {
 			return _wyhash(ptr, (UInt64)data.Length, seed, secret ?? new WyHashSecret());
 		}
 	}
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static UInt64 HashOneOffLong(Byte* ptr, UInt64 len, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) => _wyhash(ptr, len, seed, secret ?? new WyHashSecret());
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static Byte[] HashOneOff(Byte[] array, Int32 ibStart, Int32 cbSize, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) => HashOneOff(array.AsSpan(ibStart, cbSize), seed, secret);
 
+	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 	public static void HashOneOff(Byte[] array, Int32 ibStart, Int32 cbSize, Byte[] hashOutput, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		HashOneOff(array.AsSpan(ibStart, cbSize), hashOutput, seed, secret);
 	}
