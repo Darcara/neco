@@ -6,10 +6,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Neco.BenchmarkLibrary\Neco.BenchmarkLibrary.csproj" />
+      <ProjectReference Include="..\Neco.Common\Neco.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.IO.Hashing" Version="9.0.0" />
     </ItemGroup>
 
 </Project>
