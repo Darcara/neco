@@ -2,14 +2,14 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime;
+using System.Threading;
+using System.Threading.Tasks;
+using Neco.Common.Extensions;
 
-public class PerformanceHelper {
-#if DEBUG
-	private const String _configuration = "DEBUG";
-#else
-	private const String _configuration = "RELEASE";
-#endif
-
+public static class PerformanceHelper {
 	/// <summary>
 	/// NO-Action used to quantify overhead.
 	/// </summary>
@@ -18,7 +18,7 @@ public class PerformanceHelper {
 	/// <summary>
 	/// Proper perf tests should be in a 'Benchmark.Net' project. This function is only useful as a rough guess into its performance.
 	/// </summary>
-	public static TimeSpan GetPerformanceRough<T>(String name, Action<T> testMe, T? data) {
+	public static TimeSpan GetPerformanceRough<T>(String name, Action<T> testMe, T data) {
 		return GetPerformanceRough(name, () => testMe(data));
 	}
 
@@ -32,8 +32,8 @@ public class PerformanceHelper {
 		Int32 gen0BeforeOverhead = GC.CollectionCount(0);
 		Int32 gen1BeforeOverhead = GC.CollectionCount(1);
 		Int32 gen2BeforeOverhead = GC.CollectionCount(2);
-
 		Action nopAction = _nopAction;
+		Int64 overheadTotalBytesAllocatedBefore = GC.GetTotalAllocatedBytes(true);
 		Stopwatch sw = Stopwatch.StartNew();
 		while (sw.Elapsed.TotalMilliseconds < 1000) {
 			nopAction.Invoke();
@@ -41,6 +41,7 @@ public class PerformanceHelper {
 		}
 
 		sw.Stop();
+		Int64 overheadTotalBytesAllocatedAfter = GC.GetTotalAllocatedBytes(true);
 		Double overheadPerOperationMicroSeconds = sw.Elapsed.Ticks * 0.1 / nopExecutes;
 
 		GC.Collect(2, GCCollectionMode.Forced, true, true);
@@ -65,6 +66,7 @@ public class PerformanceHelper {
 
 		// Test
 		Int64 testExecutes = 0;
+		Int64 totalBytesAllocatedBefore = GC.GetTotalAllocatedBytes(true);
 		sw.Restart();
 		while (sw.Elapsed.TotalMilliseconds < testMs) {
 			testMe.Invoke();
@@ -72,6 +74,7 @@ public class PerformanceHelper {
 		}
 
 		sw.Stop();
+		Int64 totalBytesAllocatedAfter = GC.GetTotalAllocatedBytes(true);
 		TimeSpan timeEnd = currentProcess.TotalProcessorTime;
 		GC.Collect(2, GCCollectionMode.Forced, true, true);
 		Int32 gen0 = GC.CollectionCount(0);
@@ -86,7 +89,11 @@ public class PerformanceHelper {
 		Double totalCpuAdjustedOperationsPerSecond = 1D / ((totalCpu.TotalSeconds / testExecutes) - overheadPerOperationMicroSeconds / 1_000_000D);
 		TimeSpan totalCleanTime = TimeSpan.FromTicks((Int64)(cleanTimePerOperationMicroSeconds * testExecutes * 10));
 
-		Console.WriteLine($"{name} {testExecutes:n0} ops in {sw.Elapsed.TotalMilliseconds:n3}ms = clean per operation: {cleanTimePerOperationMicroSeconds:n3}µs or {operationsPerSecond:n3}op/s with GC {gen0 - gen0Before - 1 - gen0Overhead}/{gen1 - gen1Before - 1 - gen1Overhead}/{gen2 - gen2Before - 1 - gen2Overhead}");
+		Double overheadBytesAllocatedPerRun = (overheadTotalBytesAllocatedAfter - overheadTotalBytesAllocatedBefore) / (Double)nopExecutes;
+		Double bytesAllocatedPerRun = (totalBytesAllocatedAfter - totalBytesAllocatedBefore) / (Double)testExecutes;
+		Double bytesAllocatedPerRunClean = bytesAllocatedPerRun - overheadBytesAllocatedPerRun;
+
+		Console.WriteLine($"{name} {testExecutes:n0} ops in {sw.Elapsed.TotalMilliseconds:n3}ms = clean per operation: {cleanTimePerOperationMicroSeconds:n3}µs or {operationsPerSecond:n3}op/s with {bytesAllocatedPerRunClean.ToFileSize()} per run and GC {gen0 - gen0Before - 1 - gen0Overhead}/{gen1 - gen1Before - 1 - gen1Overhead}/{gen2 - gen2Before - 1 - gen2Overhead}");
 		Console.WriteLine($"{name} TotalCPUTime per operation: {totalCpu.TotalMilliseconds:n3}ms or clean {totalCpuAdjustedOperationsPerSecond:n3}op/s for a factor of {totalCpu.TotalMilliseconds / sw.Elapsed.TotalMilliseconds:n3}");
 		return totalCleanTime;
 	}
