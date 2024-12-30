@@ -1,8 +1,8 @@
 ﻿namespace Neco.Benchmark;
 
 using System.Collections.Frozen;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Configs;
+using System.Collections.Generic;
+using System.Linq;
 
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams)]
 public class SpanDictionaryLookup {

@@ -2,8 +2,6 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Configs;
 using Neco.Common;
 
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams)]

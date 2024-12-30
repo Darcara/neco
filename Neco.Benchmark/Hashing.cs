@@ -1,7 +1,5 @@
 namespace Neco.Benchmark;
 
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Configs;
 using Neco.Common;
 using Neco.Common.Data.Hash;
 
