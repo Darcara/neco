@@ -178,4 +178,31 @@ public static class IEnumerableExtensions {
 		ArgumentNullException.ThrowIfNull(source);
 		return source.Where(t => t != null)!;
 	}
+	
+	/// <summary>
+	/// Copies the elements of an <see cref="IEnumerable{T}"/> into the supplied array
+	/// </summary>
+	/// <param name="source">The enumerable to copy</param>
+	/// <param name="destination">The destination array</param>
+	/// <param name="destinationOffset">The offset at which the elements will be inserted</param>
+	public static void CopyTo<T>(this IEnumerable<T> source, T[] destination, Int32 destinationOffset) {
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(destination);
+		foreach (T t in source) {
+			destination[destinationOffset++] = t;
+		}
+	}
+	
+	/// <summary>
+	/// Copies the elements of an <see cref="IEnumerable{T}"/> into the supplied span
+	/// </summary>
+	/// <param name="source">The enumerable to copy</param>
+	/// <param name="destination">The destination span</param>
+	public static void CopyTo<T>(this IEnumerable<T> source, Span<T> destination) where T : struct {
+		ArgumentNullException.ThrowIfNull(source);
+		Int32 offset = 0;
+		foreach (T t in source) {
+			destination[offset++] = t;
+		}
+	}
 }
