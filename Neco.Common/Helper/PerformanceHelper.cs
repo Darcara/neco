@@ -1,10 +1,8 @@
 ﻿namespace Neco.Common.Helper;
 
-using System;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Neco.Common.Extensions;
@@ -85,8 +83,8 @@ public static class PerformanceHelper {
 		Double timePerOperationMicroSeconds = timeInMicroseconds / testExecutes;
 		Double cleanTimePerOperationMicroSeconds = timePerOperationMicroSeconds - overheadPerOperationMicroSeconds;
 		Double operationsPerSecond = 1_000_000D / cleanTimePerOperationMicroSeconds;
-		TimeSpan totalCpu = (timeEnd - timeStart);
-		Double totalCpuAdjustedOperationsPerSecond = 1D / ((totalCpu.TotalSeconds / testExecutes) - overheadPerOperationMicroSeconds / 1_000_000D);
+		TimeSpan totalCpu = timeEnd - timeStart;
+		Double totalCpuAdjustedOperationsPerSecond = 1D / (totalCpu.TotalSeconds / testExecutes - overheadPerOperationMicroSeconds / 1_000_000D);
 		TimeSpan totalCleanTime = TimeSpan.FromTicks((Int64)(cleanTimePerOperationMicroSeconds * testExecutes * 10));
 
 		Double overheadBytesAllocatedPerRun = (overheadTotalBytesAllocatedAfter - overheadTotalBytesAllocatedBefore) / (Double)nopExecutes;
@@ -128,17 +126,19 @@ public static class PerformanceHelper {
 	/// <typeparam name="TData"></typeparam>
 	/// <typeparam name="TCreated"></typeparam>
 	/// <returns></returns>
+	[MethodImpl(MethodImplOptions.NoInlining|MethodImplOptions.NoOptimization)]
 	public static GenerationResult<TCreated> EstimateObjectSize<TData, TCreated>(String? name, Int32 warmupInterations, Int32 measureIterations, TextWriter? outputResults, TData data, Func<TData, TCreated> creator) where TCreated : class {
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(measureIterations);
 		warmupInterations = Math.Max(0, warmupInterations);
 
-		for (int i = 0; i < warmupInterations; i++) {
-			creator(data);
+		for (Int32 i = 0; i < warmupInterations; i++) {
+			TCreated warmupObject = creator(data);
+			if (warmupObject is IDisposable disposable) disposable.Dispose();
+			else if (warmupObject is IAsyncDisposable asyncDisposable) asyncDisposable.DisposeAsync().GetResultBlocking();
 		}
 
 		Stopwatch sw = new();
 		Process currentProcess = Process.GetCurrentProcess();
-		TCreated? createdObject = null;
 		Int64[] allocatedBefore = new Int64[measureIterations];
 		Int64[] allocatedAfter = new Int64[measureIterations];
 		Int64[] totalBytesAllocatedBefore = new Int64[measureIterations];
@@ -146,65 +146,71 @@ public static class PerformanceHelper {
 		Int64[] processBytesBefore = new Int64[measureIterations];
 		Int64[] processBytesAfter = new Int64[measureIterations];
 		TimeSpan[] duration = new TimeSpan[measureIterations];
-		
-		for (int i = 0; i < measureIterations; i++) {
-			if (createdObject != null) {
-				if (createdObject is IDisposable disposable) disposable.Dispose();
-				else if (createdObject is IAsyncDisposable asyncDisposable) asyncDisposable.DisposeAsync().GetResultBlocking();
-			}
+
+		for (Int32 i = 0; i < measureIterations; i++) {
 			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-			GC.Collect(2, GCCollectionMode.Aggressive, true, true);
+			GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
+			Thread.Sleep(250);
+			GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+			Thread.Sleep(250);
 			GC.WaitForPendingFinalizers();
 			allocatedBefore[i] = GC.GetTotalMemory(true);
 			totalBytesAllocatedBefore[i] = GC.GetTotalAllocatedBytes(true);
-			Thread.Sleep(100);
+			Thread.Sleep(250);
 			currentProcess.Refresh();
 			processBytesBefore[i] = currentProcess.PrivateMemorySize64;
 			sw.Restart();
 			
-			createdObject = creator(data);
-			
-			sw.Stop();
-			duration[i] = sw.Elapsed;
-			totalBytesAllocatedAfter[i] = GC.GetTotalAllocatedBytes(true);
-			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-			GC.Collect(2, GCCollectionMode.Aggressive, true, true);
-			GC.WaitForPendingFinalizers();
-			allocatedAfter[i] = GC.GetTotalMemory(true);
-			Thread.Sleep(500);
-			currentProcess.Refresh();
-			processBytesAfter[i] = currentProcess.PrivateMemorySize64;
+			MeasureSingleCreation(data, creator, i, currentProcess, sw, duration, totalBytesAllocatedAfter, allocatedAfter, processBytesAfter);
 		}
 
+		TCreated created = creator(data);
 		GenerationResult<TCreated> result = new() {
-			Name = name ?? createdObject?.GetType().GetGenericName() ?? typeof(TCreated).GetGenericName(),
-			AllocatedBytesBefore = allocatedBefore.Average(),
-			AllocatedBytesAfter = allocatedAfter.Average(),
-			TotalAllocatedBytesBefore = totalBytesAllocatedBefore.Average(),
-			TotalAllocatedBytesAfter = totalBytesAllocatedAfter.Average(),
-			ProcessBytesBefore = processBytesBefore.Average(),
-			ProcessBytesAfter = processBytesAfter.Average(),
+			Name = name ?? created.GetType().GetGenericName(),
+			AllocateDifference = allocatedBefore.Zip(allocatedAfter).Select(((Int64 before, Int64 after) tpl) => tpl.after - tpl.before).Average(),
+			TotalAllocatedDifference = totalBytesAllocatedBefore.Zip(totalBytesAllocatedAfter).Select(((Int64 before, Int64 after) tpl) => tpl.after - tpl.before).Average(),
+			ProcessBytesDifference = processBytesBefore.Zip(processBytesAfter).Select(((Int64 before, Int64 after) tpl) => tpl.after - tpl.before).Average(),
 			ElapsedTime = TimeSpan.FromMilliseconds(duration.Average(ts => ts.TotalMilliseconds)),
-			CreatedObject = createdObject!,
+			CreatedObject = created,
 		};
 		outputResults?.WriteLine(result);
 
 		return result;
 	}
+
+	[MethodImpl(MethodImplOptions.NoInlining|MethodImplOptions.NoOptimization)]
+	private static void MeasureSingleCreation<TData, TCreated>(TData data, Func<TData, TCreated> creator, Int32 i, Process currentProcess, Stopwatch sw, TimeSpan[] duration, Int64[] totalBytesAllocatedAfter, Int64[] allocatedAfter, Int64[] processBytesAfter) where TCreated : class {
+		TCreated createdObject = creator(data);
+
+		sw.Stop();
+		duration[i] = sw.Elapsed;
+		totalBytesAllocatedAfter[i] = GC.GetTotalAllocatedBytes(true);
+		GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+		GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
+		Thread.Sleep(250);
+		GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+		Thread.Sleep(250);
+		GC.WaitForPendingFinalizers();
+		allocatedAfter[i] = GC.GetTotalMemory(true);
+		Thread.Sleep(500);
+		currentProcess.Refresh();
+		processBytesAfter[i] = currentProcess.PrivateMemorySize64;
+			
+		if (createdObject is IDisposable disposable) disposable.Dispose();
+		else if (createdObject is IAsyncDisposable asyncDisposable) asyncDisposable.DisposeAsync().GetResultBlocking();
+		createdObject = null!;
+	}
 }
 
 public class GenerationResult {
 	public required String Name { get; init; }
-	public required Double AllocatedBytesBefore { get; init; }
-	public required Double AllocatedBytesAfter { get; init; }
-	public required Double TotalAllocatedBytesBefore { get; init; }
-	public required Double TotalAllocatedBytesAfter { get; init; }
-	public required Double ProcessBytesBefore { get; init; }
-	public required Double ProcessBytesAfter { get; init; }
+	public required Double AllocateDifference { get; init; }
+	public required Double TotalAllocatedDifference { get; init; }
+	public required Double ProcessBytesDifference { get; init; }
 	public required TimeSpan ElapsedTime { get; init; }
 
 	/// <inheritdoc />
-	public override String ToString() => $"{Name} built with {(AllocatedBytesAfter - AllocatedBytesBefore).ToFileSize()} in {ElapsedTime}. During the creation {(TotalAllocatedBytesAfter - TotalAllocatedBytesBefore).ToFileSize()} were allocated. Process size increased by {(ProcessBytesAfter - ProcessBytesBefore).ToFileSize()}.";
+	public override String ToString() => $"{Name} built with {AllocateDifference.ToFileSize()} in {ElapsedTime}. During the creation {TotalAllocatedDifference.ToFileSize()} were allocated. Process size increased by {ProcessBytesDifference.ToFileSize()}.";
 
 	public static implicit operator String(GenerationResult gr) => gr.ToString();
 }
