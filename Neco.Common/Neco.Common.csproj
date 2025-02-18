@@ -11,6 +11,8 @@
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
         <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
         <EnableAotAnalyzer>true</EnableAotAnalyzer>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
@@ -28,6 +30,8 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EmbedAllSources>true</EmbedAllSources>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PublishDocumentationFile>true</PublishDocumentationFile>
         <DebugType>portable</DebugType>
     </PropertyGroup>
 
@@ -41,19 +45,24 @@
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.0" PrivateAssets="All" />
-        <PackageReference Include="System.IO.Pipelines" Version="9.0.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
+        <PackageReference Include="System.IO.Hashing" Version="9.0.1" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.1" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Pipelines" Version="9.0.1" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
+        <Using Include="System"/>
+        <Using Include="System.Collections.Generic"/>
+        <Using Include="System.IO"/>
+        <Using Include="System.Linq"/>
         <InternalsVisibleTo Include="Neco.Test"/>
         <InternalsVisibleTo Include="Neco.Benchmark"/>
         <None Include="..\LICENSE" Pack="true" PackagePath="."/>
         <None Include="README.md" Pack="true" PackagePath="README.md"/>
     </ItemGroup>
     <ItemGroup>
-      <Reference Include="Microsoft.Extensions.Http" PrivateAssets="All">
-        <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.11\Microsoft.Extensions.Http.dll</HintPath>
-      </Reference>
+        <Reference Include="Microsoft.Extensions.Http" PrivateAssets="All">
+            <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\9.0.0\Microsoft.Extensions.Http.dll</HintPath>
+        </Reference>
     </ItemGroup>
 </Project>
