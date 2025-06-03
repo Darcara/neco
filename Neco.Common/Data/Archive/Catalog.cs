@@ -131,18 +131,16 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		ObjectDisposedException.ThrowIf(_isDisposed, this);
 		Int64 dataStreamOffset = _dataFileStream.Seek(0, SeekOrigin.End);
 
-		static void Nop(Byte[] data, Int32 offset, Int32 length) {
+		static void Nop(ReadOnlySpan<Byte> data) {
 		}
 
-		HashAlgorithm? hasher = null;
+		WyHashFinal3? hasher = null;
 		InspectStreamDelegate inspector = Nop;
 		if (_options.Features.HasFlag(CatalogFeatures.ChecksumPerEntry)) {
 			hasher = new WyHashFinal3();
-			hasher.Initialize();
-			Debug.Assert(hasher.HashSize == 64);
 
-			void Hash(Byte[] data, Int32 offset, Int32 length) {
-				hasher.TransformBlock(data, offset, length, null, 0);
+			void Hash(ReadOnlySpan<Byte> data) {
+				hasher.AppendData(data);
 			}
 
 			inspector = Hash;
@@ -169,11 +167,10 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 
 		Int64 checksum = 0;
 		if (_options.Features.HasFlag(CatalogFeatures.ChecksumPerEntry)) {
-			hasher!.TransformFinalBlock([], 0, 0);
-			Byte[] hash = hasher.Hash!;
+			hasher!.AppendData([], 0, 0);
+			Byte[] hash = hasher.GetCurrentHash();
 			Debug.Assert(hash.Length == 8);
 			checksum = BitConverter.ToInt64(hash);
-			hasher.Dispose();
 		}
 
 		// delete uncompressed so it is not saved and no longer available

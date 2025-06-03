@@ -7,7 +7,7 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
-public delegate void InspectStreamDelegate(Byte[] data, Int32 offset, Int32 length);
+public delegate void InspectStreamDelegate(ReadOnlySpan<Byte> data);
 
 public static class StreamExtensions {
 	public static Int64 CopyTo(this PipeReader source, Stream destination, Int32 bufferSize = MagicNumbers.MaxNonLohBufferSize) {
@@ -103,7 +103,7 @@ public static class StreamExtensions {
 			while ((bytesRead = source.Read(buffer, 0, buffer.Length)) != 0) {
 				destination.Write(buffer, 0, bytesRead);
 				totalBytesCopied += bytesRead;
-				inspectCallback.Invoke(buffer, 0, bytesRead);
+				inspectCallback.Invoke(new ReadOnlySpan<Byte>(buffer, 0, bytesRead));
 			}
 
 			return totalBytesCopied;
@@ -131,7 +131,7 @@ public static class StreamExtensions {
 			while ((bytesRead = await source.ReadAsync(bufferMem, cancellationToken)) != 0) {
 				await destination.WriteAsync(bufferMem.Slice(0, bytesRead), cancellationToken).ConfigureAwait(false);
 				totalBytesCopied += bytesRead;
-				inspectCallback.Invoke(buffer, 0, bytesRead);
+				inspectCallback.Invoke(new ReadOnlySpan<Byte>(buffer, 0, bytesRead));
 			}
 
 			return totalBytesCopied;

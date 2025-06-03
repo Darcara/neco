@@ -9,6 +9,7 @@ public static class UriExtensions {
 	/// Returns an array similar to <see cref="Uri.Segments"/>, but without the forward slashes. Also works for relative Uris.
 	/// </summary>
 	public static String[] SegmentsWithoutDelimiter(this Uri uri) {
+		ArgumentNullException.ThrowIfNull(uri);
 		if (!uri.IsAbsoluteUri)
 			uri = new(UriHelper.ExampleBaseUri, uri);
 		String path = uri.GetComponents(UriComponents.Path | UriComponents.KeepDelimiter, UriFormat.UriEscaped);
@@ -21,7 +22,7 @@ public static class UriExtensions {
 		while (index < path.Length) {
 			Int32 next = path.IndexOf('/', index);
 			if (next == -1) {
-				String segment = path.Substring(index, path.Length - index);
+				String segment = path.Substring(index);
 				segments.Add(segment);
 				break;
 			}
