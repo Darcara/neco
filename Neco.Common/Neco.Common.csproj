@@ -39,16 +39,16 @@
         <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.11.0-beta1.24508.2">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.1" />
-        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.1" PrivateAssets="All" />
-        <PackageReference Include="System.IO.Pipelines" Version="9.0.1" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
+        <PackageReference Include="System.IO.Hashing" Version="9.0.4" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.4" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Pipelines" Version="9.0.4" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="System"/>

@@ -1,6 +1,7 @@
 namespace Neco.Common.Data.Hash;
 
 using System;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -63,7 +64,7 @@ public readonly struct WyHashSecret {
 
 [Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
-public unsafe class WyHashFinal3 : HashAlgorithm {
+public sealed unsafe class WyHashFinal3 : AIncrementalHash {
 	private static readonly Byte[] _seedLookupBytes = [15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240];
 	private static readonly UInt64 _seedLookupBytesLength = (UInt64)_seedLookupBytes.Length;
 
@@ -78,12 +79,11 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	public WyHashFinal3() : this(0xAC8FDFCE8D7ED9DFUL, new WyHashSecret()) {
 	}
 
-	public WyHashFinal3(UInt64 seed, WyHashSecret? secret = null) {
-		HashSizeValue = 64;
+	public WyHashFinal3(UInt64 seed, WyHashSecret? secret = null) : base(new HashAlgorithmName("WyHashFinal3"), 8) {
 		_originalSeed = seed;
 		_originalSecret = secret ?? new WyHashSecret();
 
-		Initialize();
+		Reset();
 	}
 
 	public static void MakeSecret(UInt64 seed, Span<UInt64> secret) {
@@ -231,7 +231,7 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 	}
 
 	[Obsolete("Use System.IO.Hashing.XxHash3 instead.")]
-	public static void HashOneOff(ReadOnlySpan<Byte> data, Byte[] hashOutput, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
+	public static void HashOneOff(ReadOnlySpan<Byte> data, Span<Byte> hashOutput, UInt64 seed = 0xAC8FDFCE8D7ED9DFUL, WyHashSecret? secret = null) {
 		Debug.Assert(hashOutput.Length == 8);
 		fixed (Byte* ptr = data) {
 			UInt64 hash = _wyhash(ptr, (UInt64)data.Length, seed, secret ?? new WyHashSecret());
@@ -267,15 +267,15 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 		_stateSee2 = _wymix(_wyr8(p + 32) ^ _originalSecret.Item3, _wyr8(p + 40) ^ _stateSee2);
 	}
 
-	#region Overrides of HashAlgorithm
+	/// <inheritdoc cref="IncrementalHash.AppendData(byte[], Int32, Int32)" />
+	public void AppendData(Byte[] data, Int32 offset, Int32 count) => AppendData(new ReadOnlySpan<Byte>(data, offset, count));
 
-	/// <inheritdoc />
-	protected override void HashCore(Byte[] array, Int32 ibStart, Int32 cbSize) {
+	/// <inheritdoc cref="IncrementalHash.AppendData(ReadOnlySpan{Byte})" />
+	public override void AppendData(ReadOnlySpan<Byte> data) {
 		if (_byteBuffered == 0) {
-			Int32 bytesRemaining = cbSize;
+			Int32 bytesRemaining = data.Length;
 			if (bytesRemaining > 48) {
-				Span<Byte> span = array.AsSpan(ibStart, cbSize);
-				fixed (Byte* ptr = span) {
+				fixed (Byte* ptr = data) {
 					Byte* p = ptr;
 					do {
 						HashIncrementalBlock(p);
@@ -285,8 +285,8 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 					} while (bytesRemaining > 48);
 
 					if (bytesRemaining < 16) {
-						array
-							.AsSpan(ibStart + cbSize - 16, 16)
+						data
+							.Slice(data.Length - 16, 16)
 							.CopyTo(_state.AsSpan(bytesRemaining));
 						_byteBuffered = bytesRemaining;
 						return;
@@ -296,21 +296,21 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 
 			if (bytesRemaining > 0) {
 				// Copy rest
-				array
-					.AsSpan(ibStart + cbSize - bytesRemaining, bytesRemaining)
+				data
+					.Slice(data.Length - bytesRemaining, bytesRemaining)
 					.CopyTo(_state.AsSpan(16));
 				_byteBuffered = bytesRemaining;
 			}
 		} else {
 			// Fill buffer as much as possible
 			Int32 maxBytesToFill = 48 - _byteBuffered;
-			Int32 bytesToCopy = cbSize > maxBytesToFill ? maxBytesToFill : cbSize;
-			array
-				.AsSpan(ibStart, bytesToCopy)
+			Int32 bytesToCopy = data.Length > maxBytesToFill ? maxBytesToFill : data.Length;
+			data
+				.Slice(0, bytesToCopy)
 				.CopyTo(_state.AsSpan(16 + _byteBuffered));
 			_byteBuffered += bytesToCopy;
 
-			Int32 bytesRemaining = cbSize - bytesToCopy;
+			Int32 bytesRemaining = data.Length - bytesToCopy;
 			if (_byteBuffered < 48 || bytesRemaining == 0) return;
 
 			fixed (Byte* ptr = _state.AsSpan(16)) {
@@ -326,14 +326,18 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 			}
 
 			_byteBuffered = 0;
-			if (bytesRemaining > 0) HashCore(array, ibStart + bytesToCopy, bytesRemaining);
+			if (bytesRemaining > 0) AppendData(data.Slice(bytesToCopy, bytesRemaining));
 		}
 	}
 
 	/// <inheritdoc />
-	protected override Byte[] HashFinal() {
+	public override IIncrementalHash Clone() => throw new NotImplementedException();
+
+	/// <inheritdoc />
+	public override Int32 GetCurrentHash(Span<Byte> destination) {
 		if (_totalBytesProcessed == 0) {
-			return HashOneOff(_state, 16, _byteBuffered, _originalSeed, _originalSecret);
+			HashOneOff(_state.AsSpan( 16, _byteBuffered), destination, _originalSeed, _originalSecret);
+			return HashLengthInBytes;
 		}
 
 		_stateSeed ^= _stateSee1 ^ _stateSee2;
@@ -353,20 +357,19 @@ public unsafe class WyHashFinal3 : HashAlgorithm {
 
 
 			UInt64 finalHash = _wymix(_originalSecret.Item1 ^ ((UInt64)_byteBuffered + _totalBytesProcessed), _wymix(a ^ _originalSecret.Item1, b ^ _stateSeed));
-			return BitConverter.GetBytes(finalHash);
+			BinaryPrimitives.WriteUInt64LittleEndian(destination, finalHash);
+			return HashLengthInBytes;
 		}
 	}
 
-	/// <inheritdoc />
-	public sealed override void Initialize() {
+	/// <inheritdoc cref="HashAlgorithm.Initialize" />
+	public override void Reset() {
 		_byteBuffered = 0;
 		_totalBytesProcessed = 0;
 		_stateSeed = _originalSeed ^ _originalSecret.Item0;
 		_stateSee1 = _stateSeed;
 		_stateSee2 = _stateSeed;
 	}
-
-	#endregion
 
 	/// <para>With old Bmi2.X64.MultiplyNoFlags<br/>
 	/// wyhash-64-final3 44,282,796 ops in 5,000.001ms = clean per operation: 0.081µs or 12,415,099.974op/s with GC 0/0/0<br/>

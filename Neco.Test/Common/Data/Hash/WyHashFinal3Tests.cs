@@ -183,15 +183,15 @@ public class WyHashFinal3Tests : AHashTest {
 		Random.Shared.NextBytes(testArray);
 
 		using WyHashFinal3 hasher = new(seed);
-		hasher.Initialize();
+		hasher.Reset();
 		for (Int32 i = 0; i < bytes.Length; ++i) {
 			Int32 idx = Random.Shared.Next(0, 64);
 			testArray[idx] = bytes[i];
-			hasher.TransformBlock(testArray, idx, 1, null, 0);
+			hasher.AppendData(testArray, idx, 1);
 		}
 
-		hasher.TransformFinalBlock(testArray, 0, 0);
-		String? hashReadable = hasher.Hash?.ToStringHexSingleLine();
+		hasher.AppendData(testArray, 0, 0);
+		String hashReadable = hasher.GetCurrentHash().ToStringHexSingleLine();
 
 		Assert.That(hashReadable, Is.EqualTo(expected), $"Default hashing for {bytes.ToStringHexSingleLine()} - ({bytes.Length} bytes) {Encoding.ASCII.GetString(bytes)}");
 	}
@@ -207,19 +207,19 @@ public class WyHashFinal3Tests : AHashTest {
 		Byte[] byteHash = WyHashFinal3.HashOneOff(buffer);
 
 		WyHashFinal3 hasher = new();
-		hasher.Initialize();
+		hasher.Reset();
 		Int32 bytesHashed = 0;
 		while (bytesHashed < size) {
 			Int32 bytesToHash = Math.Min(hashBlockSize, size - bytesHashed);
-			hasher.TransformBlock(buffer, bytesHashed, bytesToHash, null, 0);
+			hasher.AppendData(buffer, bytesHashed, bytesToHash);
 			bytesHashed += bytesToHash;
 		}
 		
 		bytesHashed.Should().Be(size);
 
-		hasher.TransformFinalBlock(Array.Empty<Byte>(), 0, 0);
+		hasher.AppendData(Array.Empty<Byte>(), 0, 0);
 
 		longHash.ToString("X16").Should().Be(byteHash.ToStringHexSingleLine());
-		longHash.ToString("X16").Should().Be(hasher.Hash?.ToStringHexSingleLine());
+		longHash.ToString("X16").Should().Be(hasher.GetCurrentHash().ToStringHexSingleLine());
 	}
 }
