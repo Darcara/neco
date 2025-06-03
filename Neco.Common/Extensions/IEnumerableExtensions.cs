@@ -205,4 +205,30 @@ public static class IEnumerableExtensions {
 			destination[offset++] = t;
 		}
 	}
+	
+	public static Boolean ContainsAny<T>(this ICollection<T> source, IEnumerable<T> other)  {
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(other);
+		foreach (T t in other) {
+			if(source.Contains(t)) return true;
+		}
+
+		return false;
+	}
+	
+	public static Boolean ContainsAll<T>(this ICollection<T> source, IEnumerable<T> other)  {
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(other);
+		foreach (T t in other) {
+			if(!source.Contains(t)) return false;
+		}
+
+		return true;
+	}
+
+	// public static Boolean TryFind<T>(this ICollection<T> source, Predicate<T> predicate, [NotNullWhen(true)]out T? result)  {
+	// 	ArgumentNullException.ThrowIfNull(source);
+	// 	result = source.FirstOrDefault(t => predicate(t));
+	// }
+
 }
