@@ -11,6 +11,8 @@
         <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
         <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
         <EnableAotAnalyzer>false</EnableAotAnalyzer>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -33,7 +35,7 @@
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
         <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.14.0" />
-        <PackageReference Include="Neco.Common" Version="0.2.0" />
+        <PackageReference Include="Neco.Common" Version="0.2.1" />
     </ItemGroup>
 
     <ItemGroup>
