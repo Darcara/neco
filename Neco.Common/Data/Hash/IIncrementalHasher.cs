@@ -8,10 +8,13 @@ public interface IIncrementalHash : IDisposable {
 	void AppendData(ReadOnlySpan<Byte> data);
 	IIncrementalHash Clone();
 	Byte[] GetCurrentHash();
+
 	/// <inheritdoc cref="IncrementalHash.GetCurrentHash(Span{Byte})"/>
 	Int32 GetCurrentHash(Span<Byte> destination);
+
 	Byte[] GetHashAndReset();
 	Int32 GetHashAndReset(Span<Byte> destination);
+
 	/// <inheritdoc cref="IncrementalHash.TryGetCurrentHash"/>
 	Boolean TryGetCurrentHash(Span<Byte> destination, out Int32 bytesWritten);
 
@@ -22,4 +25,17 @@ public interface IIncrementalHash : IDisposable {
 	Int32 HashLengthInBytes { get; }
 
 	void Reset();
+}
+
+public static class IIncrementalHashExtensions {
+	public static Byte[] Hash(this IIncrementalHash hasher, ReadOnlySpan<Byte> data) {
+		hasher.AppendData(data);
+		return hasher.GetHashAndReset();
+	}
+	
+	public static Int32 Hash(this IIncrementalHash hasher, ReadOnlySpan<Byte> data, Span<Byte> destination) {
+		hasher.AppendData(data);
+		return hasher.GetHashAndReset(destination);
+	}
+
 }
