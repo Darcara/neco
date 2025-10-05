@@ -76,7 +76,7 @@ public static class ReflectionHelper {
 	/// <summary>
 	/// Returns wether an instance field or property with the given name has been found and its current value
 	/// </summary>
-	public static Boolean TryGetFieldOrPropertyValue<T>(Object obj, String name, out T? value) {
+	public static Boolean TryGetFieldOrPropertyValue<T>(Object obj, String name, [NotNullWhen(true)] out T? value) {
 		PropertyInfo? property = obj
 			.GetType()
 			.GetProperties(BindingFlags.FlattenHierarchy | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
