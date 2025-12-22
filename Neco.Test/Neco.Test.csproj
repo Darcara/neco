@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
@@ -9,40 +9,45 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Extensions.Logging.NUnit" Version="1.0.1" />
-        <PackageReference Include="AnyAscii" Version="0.3.3" />
-        <PackageReference Include="DawgSharp" Version="1.7.1" />
-        <PackageReference Include="FluentAssertions" Version="8.6.0" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.12.2" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-        <PackageReference Include="Moq" Version="4.20.72" />
-        <PackageReference Include="NUnit" Version="4.4.0" />
-        <PackageReference Include="NUnit.Analyzers" Version="4.10.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Extensions.Logging.NUnit" Version="1.0.1"/>
+        <PackageReference Include="AnyAscii" Version="0.3.3"/>
+        <PackageReference Include="DawgSharp" Version="1.7.1"/>
+        <PackageReference Include="FluentAssertions" Version="8.8.0"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.12.4"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
+        <PackageReference Include="Moq" Version="4.20.72"/>
+        <PackageReference Include="NUnit" Version="4.4.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="4.11.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="NUnit3TestAdapter" Version="5.1.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="6.0.1"/>
         <PackageReference Include="coverlet.collector" Version="6.0.4">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Neco.AspNet\Neco.AspNet.csproj" />
-      <ProjectReference Include="..\Neco.Common\Neco.Common.csproj" />
-      <ProjectReference Include="..\Neco.Search\Neco.Search.csproj" />
-      <ProjectReference Include="..\Neco.Web\Neco.Web.csproj" />
+        <ProjectReference Include="..\Neco.AspNet\Neco.AspNet.csproj"/>
+        <ProjectReference Include="..\Neco.Common\Neco.Common.csproj"/>
+        <ProjectReference Include="..\Neco.Search\Neco.Search.csproj"/>
+        <ProjectReference Include="..\Neco.Web\Neco.Web.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="TestData\**">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <Using Include="System"/>
+        <Using Include="System.Collections.Generic"/>
+        <Using Include="System.IO"/>
+        <Using Include="System.Linq"/>
+        <Using Include="NUnit.Framework"/>
+        <None Update="TestData\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Web\" />
+        <Folder Include="Web\"/>
     </ItemGroup>
 
 </Project>

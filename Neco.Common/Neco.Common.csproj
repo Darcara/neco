@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <ProjectGuid>680BEB80-2FE8-4DB3-853B-3746893D360D</ProjectGuid>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <OutputType>Library</OutputType>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <IsTrimmable>true</IsTrimmable>
         <IsAotCompatible>true</IsAotCompatible>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
@@ -39,16 +40,16 @@
         <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.101">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.9" />
-        <PackageReference Include="System.Threading.RateLimiting" Version="9.0.9" PrivateAssets="All" />
-        <PackageReference Include="System.IO.Pipelines" Version="9.0.9" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+        <PackageReference Include="System.IO.Hashing" Version="10.0.1" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="10.0.1" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Pipelines" Version="10.0.1" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="System"/>
