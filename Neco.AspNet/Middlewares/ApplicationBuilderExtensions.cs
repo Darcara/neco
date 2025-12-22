@@ -18,8 +18,7 @@ public static class ApplicationBuilderExtensions {
 	public static IApplicationBuilder UseCompressedStaticFiles(this IApplicationBuilder app) => UseCompressedStaticFiles(app, new CompressedStaticFilesOptions());
 	
 	public static IApplicationBuilder UseInMemoryCache(this IApplicationBuilder app, InMemoryCacheOptions options) {
-		if (app == null)
-			throw new ArgumentNullException(nameof(app));
+		ArgumentNullException.ThrowIfNull(app);
 
 		return app.UseMiddleware<InMemoryCacheMiddleware>(Options.Create(options));
 	}

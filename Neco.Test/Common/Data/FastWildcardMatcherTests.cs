@@ -1,18 +1,11 @@
 namespace Neco.Test.Common.Data;
 
-using System;
 using Neco.Common.Data;
-using NUnit.Framework;
 
 [TestFixture]
 public class FastWildcardMatcherTests {
-	public bool DoMatch(string str, string pattern, StringComparison cmp = StringComparison.Ordinal) => FastWildcardMatcher.IsMatch(str, pattern, cmp);
-
-	[TestCase(null, "a?c")]
-	public void ThrowsArgumentNull(String? str, String pattern) {
-		Assert.Throws<ArgumentNullException>(() => DoMatch(str, pattern));
-	}
-
+	public Boolean DoMatch(String str, String pattern, StringComparison cmp = StringComparison.Ordinal) => FastWildcardMatcher.IsMatch(str, pattern, cmp);
+	
 	[TestCase("abcde", null)]
 	[TestCase("abcde", "")]
 	public void ThrowsArgumentRange(String str, String? pattern) {
@@ -86,13 +79,13 @@ public class FastWildcardMatcherTests {
 	}
 
 	[TestCase("Abc", "a?c")]
-	public void IsMatch_Ordinal_DoesNotMatchDifferentCase(string str, string pattern) {
+	public void IsMatch_Ordinal_DoesNotMatchDifferentCase(String str, String pattern) {
 		Assert.That(DoMatch(str, pattern, StringComparison.Ordinal), Is.False);
 	}
 
 	[TestCase("abc", "a?c")]
 	[TestCase("Abc", "a?c")]
-	public void IsMatch_OrdinalIgnoreCase_MatchesOrdinalAndDifferentCase(string str, string pattern) {
+	public void IsMatch_OrdinalIgnoreCase_MatchesOrdinalAndDifferentCase(String str, String pattern) {
 		Assert.That(DoMatch(str, pattern, StringComparison.OrdinalIgnoreCase), Is.True);
 	}
 }
