@@ -8,7 +8,7 @@ using BenchmarkDotNet.Jobs;
 /// </summary>
 public class NetConfig : BaseConfig {
 	public NetConfig() : base(null) {
-		AddJob(CreateDefaultJob().WithRuntime(CoreRuntime.Core90).AsDefault());
+		AddJob(CreateDefaultJob().WithRuntime(CoreRuntime.Core10_0).AsDefault());
 	}
 
 	
