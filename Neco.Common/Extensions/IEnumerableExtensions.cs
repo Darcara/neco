@@ -1,9 +1,5 @@
 ﻿namespace Neco.Common.Extensions;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 // ReSharper disable once InconsistentNaming
 public static class IEnumerableExtensions {
 	/// <summary>
@@ -42,6 +38,31 @@ public static class IEnumerableExtensions {
 
 		Int32 retVal = 0;
 		foreach (T item in items) {
+			if (predicate(item)) return retVal;
+			retVal++;
+		}
+
+		return -1;
+	}
+	
+	public static Int32 FindIndex<T>(this T[] items, Int32 startingOffset, Func<T, Boolean> predicate) {
+		ArgumentNullException.ThrowIfNull(items);
+		ArgumentNullException.ThrowIfNull(predicate);
+
+		for (int i = startingOffset; i < items.Length; i++) {
+			T item = items[i];
+			if (predicate(item)) return i;
+		}
+
+		return -1;
+	}
+	
+	public static Int32 FindIndex<T>(this IEnumerable<T> items, Int32 startingOffset, Func<T, Boolean> predicate) {
+		ArgumentNullException.ThrowIfNull(items);
+		ArgumentNullException.ThrowIfNull(predicate);
+
+		Int32 retVal = startingOffset;
+		foreach (T item in items.Skip(startingOffset)) {
 			if (predicate(item)) return retVal;
 			retVal++;
 		}
