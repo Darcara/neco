@@ -1,6 +1,5 @@
 namespace Neco.Common.Data.Auth;
 
-using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Security.Cryptography;
@@ -32,6 +31,7 @@ public sealed class Pbkdf2Hasher : IPasswordHashingFunction {
 	/// <exception cref="ArgumentOutOfRangeException">If the pepper is not of the expected size (16)</exception>
 	/// <remarks>The pepper should be stored in TPM or a similar secure facility</remarks>
 	public Pbkdf2Hasher(Byte[] pepper) {
+		ArgumentNullException.ThrowIfNull(pepper);
 		if (pepper.Length != _pepperSize) throw new ArgumentOutOfRangeException(nameof(pepper), pepper.Length, $"Expected pepper to be of length {_pepperSize}, but was {pepper.Length}");
 		_pepper = pepper;
 	}

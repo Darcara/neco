@@ -1,11 +1,10 @@
 namespace Neco.Common.Concurrency;
 
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class AsyncAutoResetEvent {
+/// <inheritdoc cref="AutoResetEvent"/>
+public sealed class AsyncAutoResetEvent {
 	/// <summary>
 	/// The queue of TCSs that other tasks are awaiting.
 	/// </summary>
@@ -19,7 +18,7 @@ public class AsyncAutoResetEvent {
 	/// <summary>
 	/// The object used for mutual exclusion.
 	/// </summary>
-	private readonly Object _mutex = new();
+	private readonly Lock _mutex = new();
 
 	/// <summary>
 	/// Creates an async-compatible auto-reset event.
@@ -34,24 +33,23 @@ public class AsyncAutoResetEvent {
 	/// </summary>
 	/// <param name="cancellationToken">The cancellation token used to cancel this wait.</param>
 	public Task WaitAsync(CancellationToken cancellationToken = default) {
-		Task ret;
 		if (cancellationToken.IsCancellationRequested) return Task.FromCanceled(cancellationToken);
 		lock (_mutex) {
 			if (_isSet) {
 				_isSet = false;
-				ret = Task.CompletedTask;
-			} else {
-				TaskCompletionSource tcs = new();
-				ret = tcs.Task;
-				if (cancellationToken.CanBeCanceled) {
-					CancellationTokenRegistration reg = cancellationToken.Register(t => ((TaskCompletionSource)t!).TrySetCanceled(), tcs);
-					ret.ContinueWith((_, registration) => ((CancellationTokenRegistration)registration!).Dispose(), reg, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-				}
-				_queue.Enqueue(tcs);
+				return Task.CompletedTask;
 			}
-		}
 
-		return ret;
+			TaskCompletionSource tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+			Task ret = tcs.Task;
+			if (cancellationToken.CanBeCanceled) {
+				CancellationTokenRegistration reg = cancellationToken.Register(t => ((TaskCompletionSource)t!).TrySetCanceled(), tcs);
+				ret.ContinueWith((_, registration) => ((CancellationTokenRegistration)registration!).Dispose(), reg, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+			}
+			_queue.Enqueue(tcs);
+
+			return ret;
+		}
 	}
 
 	/// <summary>
@@ -66,12 +64,10 @@ public class AsyncAutoResetEvent {
 
 			do {
 				if (!_queue.TryDequeue(out TaskCompletionSource? tcs)) {
-					_isSet = true;
 					return;
 				}
 
-				if (tcs.TrySetResult())
-					return;
+				tcs.TrySetResult();
 			} while (true);
 		}
 	}
