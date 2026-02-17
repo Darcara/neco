@@ -6,7 +6,6 @@ using System.Diagnostics;
 /// Action-Wrapper to limit the executons of often-called Actions
 /// </summary>
 public static class Limit {
-	
 	/// <summary>
 	/// Executes an <see cref="Action"/> exactly once.
 	/// </summary>
@@ -53,6 +52,23 @@ public static class Limit {
 	}
 
 	/// <summary>
+	/// Executes an <see cref="Action"/> exactly once.
+	/// </summary>
+	/// <param name="a">The action to execute</param>
+	/// <param name="arg1">The first argument for the action</param>
+	/// <param name="arg2">The second argument for the action</param>
+	/// <param name="arg3">The third argument for the action</param>
+	/// <returns>A wrapper action that will execute the original action only once when called the first time</returns>
+	public static Action Once<TArg1, TArg2, TArg3>(Action<TArg1, TArg2, TArg3> a, TArg1 arg1, TArg2 arg2, TArg3 arg3) {
+		Boolean hasBeenCalled = false;
+		return () => {
+			if (hasBeenCalled) return;
+			hasBeenCalled = true;
+			a(arg1, arg2, arg3);
+		};
+	}
+
+	/// <summary>
 	/// Executes an <see cref="Action"/> once when called initially and then only when called after the delay has elapsed.
 	/// </summary>
 	/// <param name="delay">The time between invocations</param>
@@ -82,7 +98,7 @@ public static class Limit {
 			a(arg);
 		};
 	}
-	
+
 	/// <summary>
 	/// Executes an <see cref="Action"/> once when called initially and then only when called after the delay has elapsed.
 	/// </summary>
