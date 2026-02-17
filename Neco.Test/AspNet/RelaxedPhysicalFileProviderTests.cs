@@ -1,12 +1,8 @@
 ﻿namespace Neco.Test.AspNet;
 
-using System;
-using System.IO;
-using System.Linq;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
 using Neco.AspNet;
-using NUnit.Framework;
 
 [TestFixture]
 public class RelaxedPhysicalFileProviderTests {
@@ -33,7 +29,7 @@ public class RelaxedPhysicalFileProviderTests {
 		IFileInfo fileInfo = fileProvider.GetFileInfo("test.txt");
 		Assert.That(fileInfo, Is.Not.Null);
 		Assert.That(fileInfo.Exists, Is.True);
-		Assert.That(fileInfo.Length, Is.EqualTo(448));
+		Assert.That(fileInfo.Length, Is.EqualTo(2168));
 
 		IDirectoryContents directoryContents = fileProvider.GetDirectoryContents("/");
 		Assert.That(directoryContents, Is.Not.Null);

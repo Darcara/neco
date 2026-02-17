@@ -1,7 +1,7 @@
 ﻿namespace Neco.AspNet.Middlewares.CompressedStaticFiles;
 
 using System;
-using System.Diagnostics;
+using System.Buffers;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
@@ -9,28 +9,21 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
-using Neco.Common.Concurrency;
-using Neco.Common.Extensions;
 
-public class StaticFileInfo : IStaticFileInfo {
-	public const String CacheFileExtension = ".csfmcache";
-	private readonly ILogger<StaticFileInfo> _logger;
-	private readonly String _physicalPathUncompressed;
-	private Int64 _brotliLength;
-	private String? _physicalPathBrotli;
-	private Int64 _gzipLength;
-	private String? _physicalPathGzip;
+internal sealed class StaticFileInfo {
+	public IFileInfo PhysicalFileInfo { get; }
+	private Byte[]? _compressedBrotliResponse;
+	private Int32 _compressionStarted;
 
-	// TODO gzip
-	public StaticFileInfo(IFileInfo physicalFileInfo, String? contentType, ILogger<StaticFileInfo> logger) {
-		_logger = logger;
-		Exists = physicalFileInfo.Exists;
-		Length = physicalFileInfo.Length;
-		_physicalPathUncompressed = physicalFileInfo.PhysicalPath;
+	public StaticFileInfo(IFileInfo physicalFileInfo, String? contentType, Boolean isCompressible, Byte[]? compressedBrotliResponse) {
+		ArgumentNullException.ThrowIfNull(physicalFileInfo);
+
+		PhysicalFileInfo = physicalFileInfo;
 		ContentType = contentType;
-
+		IsCompressible = isCompressible;
+		_compressedBrotliResponse = compressedBrotliResponse;
 
 		DateTimeOffset last = physicalFileInfo.LastModified;
 		// Truncate to the second.
@@ -38,131 +31,109 @@ public class StaticFileInfo : IStaticFileInfo {
 
 		Int64 etagHash = LastModified.ToFileTime() ^ physicalFileInfo.Length;
 		Etag = new EntityTagHeaderValue('\"' + Convert.ToString(etagHash, 16) + '\"');
+		_compressionStarted = compressedBrotliResponse == null ? 0 : 1;
 	}
 
-	#region Implementation of IStaticFileInfo
-
-	/// <inheritdoc />
 	public EntityTagHeaderValue Etag { get; }
 
-	/// <inheritdoc />
 	public String? ContentType { get; }
 
-	/// <inheritdoc />
-	public Boolean Exists { get; }
+	public Boolean Exists => PhysicalFileInfo.Exists;
 
-	/// <inheritdoc />
 	public DateTimeOffset LastModified { get; }
 
-	/// <inheritdoc />
-	public Int64 Length { get; }
+	public Boolean IsCompressible { get; }
+
+	public Int64 Length => PhysicalFileInfo.Length;
 
 	public Task SendFileResponse(HttpContext context, CompressionMethod clientRequestedCompression) {
-		if (HttpMethods.IsHead(context.Request.Method)) {
-			return SendHeaderResponse(context.Response, StatusCodes.Status200OK, clientRequestedCompression);
-		}
+		ArgumentNullException.ThrowIfNull(context);
 
 		ApplyResponseHeaders(context.Response, StatusCodes.Status200OK, clientRequestedCompression);
-		return SendFileAsync(context.RequestAborted, clientRequestedCompression, context.Response, 0, Length);
+		if (HttpMethods.IsHead(context.Request.Method))
+			return Task.CompletedTask;
+
+		return SendFileAsync(clientRequestedCompression, context.Response, 0, Length, context.RequestAborted);
+	}
+
+	public static void SendErrorResponseHeader(HttpResponse response, Int32 httpStatusCode) {
+		response.StatusCode = httpStatusCode;
+		response.Headers.ContentLength = 0;
+
+		if (httpStatusCode == StatusCodes.Status405MethodNotAllowed)
+			response.Headers.Allow = new StringValues("GET, HEAD");
 	}
 
 	public Task SendHeaderResponse(HttpResponse response, Int32 statusCode, CompressionMethod clientRequestedCompression) {
+		ArgumentNullException.ThrowIfNull(response);
+
 		ApplyResponseHeaders(response, statusCode, clientRequestedCompression);
 		return Task.CompletedTask;
 	}
 
-	/// <inheritdoc />
-	public void EnsureCompression(IActionQueue actionQueue, CompressionMethod clientRequestedCompression) {
-		if (clientRequestedCompression == CompressionMethod.Brotli) {
-			if (_physicalPathBrotli is not null || _brotliLength == -1) return;
-			if (Interlocked.Exchange(ref _brotliLength, -1) == 0) {
-				// .br file already exists ?
-				FileInfo providedCompressed = new(_physicalPathUncompressed + ".br");
-				if (providedCompressed.Exists) {
-					_logger.LogDebug("Using provided file for {Compression}: {FilePath}", CompressionMethod.Brotli, providedCompressed.FullName);
-					_physicalPathBrotli = providedCompressed.FullName;
-					_brotliLength = providedCompressed.Length;
-					return;
-				}
+	public Boolean MarkForCompression() {
+		if (_compressedBrotliResponse != null || _compressionStarted == 1) return false;
+		if (Interlocked.CompareExchange(ref _compressionStarted, 1, 0) == 0)
+			return true;
+		return false;
+	}
 
-				// cache file already exists from before?
-				FileInfo createdCompressed = new(providedCompressed.FullName + CacheFileExtension);
-				if (createdCompressed.Exists) {
-					_logger.LogDebug("Using existing cache file for {Compression}: {FilePath}", CompressionMethod.Brotli, createdCompressed.FullName);
-					_physicalPathBrotli = createdCompressed.FullName;
-					_brotliLength = createdCompressed.Length;
-					return;
-				}
+	public void UpdateCompressed(Byte[] compressedBrotliResponse) {
+		_compressedBrotliResponse = compressedBrotliResponse;
+		_compressionStarted = 1;
+	}
 
-				actionQueue.Enqueue(async (sfi, outputFile) => {
-					Stopwatch sw = Stopwatch.StartNew();
-					try {
-						String tempFile = outputFile.FullName + ".tmp";
-						if (File.Exists(tempFile)) {
-							File.Delete(tempFile);
-						}
-
-						await using Stream inputStream = sfi.CreateReadStream(CompressionMethod.None);
-						await using (Stream outputFileStream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan)) {
-							await using Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.SmallestSize, false);
-							await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, sfi.Length, 65536, CancellationToken.None);
-						}
-
-						File.Move(tempFile, outputFile.FullName, true);
-					}
-					catch (Exception e) {
-						// TODO Retry, or leave compression 'running' to disable retries ?
-						Console.WriteLine(e);
-					}
-					finally {
-						outputFile.Refresh();
-						sfi._physicalPathBrotli = outputFile.FullName;
-						sfi._brotliLength = outputFile.Length;
-						Double reduction = 1D - outputFile.Length / (Double)sfi.Length;
-						sfi._logger.LogInformation("Compressed file {FilePath} {OriginalFileSize} with {Compression} to {CompressedFileSize} in {Time} for a {ReductionPercent:P2} size reduction", sfi._physicalPathUncompressed, sfi.Length.ToFileSize(), CompressionMethod.Brotli, outputFile.Length.ToFileSize(), sw.Elapsed, reduction);
-					}
-				}, this, createdCompressed);
-			}
-		} else if (clientRequestedCompression == CompressionMethod.Gzip) {
-			if (_physicalPathGzip is not null || _gzipLength == -1) return;
-		} else {
-			_logger.LogDebug("Unknown or unsupported compression method {Compression}", clientRequestedCompression);
+	private Task SendFileAsync(CompressionMethod clientRequestedCompression, HttpResponse response, Int64 offset, Int64 count, CancellationToken ct) {
+		if (clientRequestedCompression == CompressionMethod.Brotli && _compressedBrotliResponse != null) {
+			response.BodyWriter.Write(_compressedBrotliResponse);
+			return Task.CompletedTask;
 		}
+
+		return SendFileAsyncCore(PhysicalFileInfo, clientRequestedCompression, response, offset, count, ct);
 	}
 
-	#endregion
-
-	private Stream CreateReadStream(CompressionMethod clientRequestedCompression) {
-		String pathToUse = _physicalPathUncompressed;
-		if (clientRequestedCompression == CompressionMethod.Brotli && _physicalPathBrotli is not null)
-			pathToUse = _physicalPathBrotli;
-		else if (clientRequestedCompression == CompressionMethod.Gzip && _physicalPathGzip is not null)
-			pathToUse = _physicalPathGzip;
-
-		// bufferSize=1 as a workaround to indicate unbuffered read stream
-		return new FileStream(pathToUse, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
-	}
-
-	private async Task SendFileAsync(CancellationToken contextRequestAborted, CompressionMethod clientRequestedCompression, HttpResponse response, Int64 offset, Int64 count) {
+	internal static async Task SendFileAsyncCore(IFileInfo file, CompressionMethod clientRequestedCompression, HttpResponse response, Int64 offset, Int64 count, CancellationToken ct) {
 		try {
-			await using Stream fileContent = CreateReadStream(clientRequestedCompression);
-			contextRequestAborted.ThrowIfCancellationRequested();
-			if (offset > 0L)
-				fileContent.Seek(offset, SeekOrigin.Begin);
-			await StreamCopyOperation.CopyToAsync(fileContent, response.Body, count, 65536, contextRequestAborted);
+			// SequentialScan is a perf hint that requires extra sys-call on non-Windows OSes. (From: File.ReadAllBytesAsync)
+			FileOptions options = FileOptions.Asynchronous | (OperatingSystem.IsWindows() ? FileOptions.SequentialScan : FileOptions.None);
+			// bufferSize=1 as a workaround to indicate unbuffered read stream
+			FileStream fileContent = new(file.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
+			// bufferSize=1 as a workaround to indicate unbuffered read stream
+			await using (fileContent.ConfigureAwait(false)) {
+				if (offset > 0L) fileContent.Seek(offset, SeekOrigin.Begin);
+				await response.StartAsync(ct).ConfigureAwait(false);
+
+				if (clientRequestedCompression == CompressionMethod.Brotli) {
+					await using BrotliStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
+					await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, 65536, ct).ConfigureAwait(false);
+				} else if (clientRequestedCompression == CompressionMethod.Gzip) {
+					await using GZipStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
+					await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, 65536, ct).ConfigureAwait(false);
+				} else {
+					await StreamCopyOperation.CopyToAsync(fileContent, response.Body, count, 65536, ct).ConfigureAwait(false);
+				}
+			}
 		}
 		catch (OperationCanceledException) {
 			// ignore
 		}
 		catch (FileNotFoundException) {
-			response.Clear();
-			await SendHeaderResponse(response, StatusCodes.Status404NotFound, CompressionMethod.None);
+			if (!response.HasStarted) {
+				response.Clear();
+				SendErrorResponseHeader(response, StatusCodes.Status404NotFound);
+			}
 		}
 	}
 
 	private void ApplyResponseHeaders(HttpResponse response, Int32 statusCode, CompressionMethod clientRequestedCompression) {
 		response.StatusCode = statusCode;
 		Int64 contentLength = Length;
+		if (clientRequestedCompression == CompressionMethod.Brotli) {
+			contentLength = _compressedBrotliResponse?.Length ?? 0;
+		} else if (clientRequestedCompression == CompressionMethod.Gzip) {
+			contentLength = 0;
+		}
+
 		if (statusCode < 400) {
 			// these headers are returned for 200, 206, and 304
 			// they are not returned for 412 and 416
@@ -174,24 +145,19 @@ public class StaticFileInfo : IStaticFileInfo {
 			responseHeaders[HeaderNames.LastModified] = LastModified.ToString("R");
 			responseHeaders[HeaderNames.ETag] = Etag.ToString();
 			responseHeaders[HeaderNames.Vary] = HeaderNames.AcceptEncoding;
-			responseHeaders[HeaderNames.CacheControl] = "public, immutable, max-age=3600";
-			// Would be ignored due to existence of CacheControl max-age
-			// responseHeaders[HeaderNames.Expires] = DateTime.UtcNow.AddSeconds(seconds).ToString("R");
+			// 31536000 == 1 year
+			responseHeaders[HeaderNames.CacheControl] = "public, immutable, max-age=31536000";
+			// HeaderNames.Expires would be ignored due to existence of CacheControl max-age
 
 			// This also disables re-compression from ResponseCompressionMiddleware
-			if (clientRequestedCompression == CompressionMethod.Brotli && _physicalPathBrotli is not null) {
+			if (clientRequestedCompression == CompressionMethod.Brotli) {
 				responseHeaders[HeaderNames.ContentEncoding] = "br";
-				contentLength = _brotliLength;
-			} else if (clientRequestedCompression == CompressionMethod.Gzip && _physicalPathGzip is not null) {
+			} else if (clientRequestedCompression == CompressionMethod.Gzip) {
 				responseHeaders[HeaderNames.ContentEncoding] = "gzip";
-				contentLength = _gzipLength;
 			}
-
-
-			// responseHeaders[HeaderNames.AcceptRanges] = "bytes";
 		}
 
-		if (statusCode == StatusCodes.Status200OK) {
+		if (statusCode == StatusCodes.Status200OK && contentLength > 0) {
 			// this header is only returned here for 200
 			// it already set to the returned range for 206
 			// it is not returned for 304, 412, and 416
@@ -202,7 +168,7 @@ public class StaticFileInfo : IStaticFileInfo {
 	#region Overrides of Object
 
 	/// <inheritdoc />
-	public override String ToString() => _physicalPathUncompressed;
+	public override String ToString() => PhysicalFileInfo.PhysicalPath ?? String.Empty;
 
 	#endregion
 }

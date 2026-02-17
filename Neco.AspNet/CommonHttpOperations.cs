@@ -5,16 +5,13 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
-
-public static class NotModifiedResult {
-	public const Int32 HeaderNotPresent = 0;
-	public const Int32 NotModified = 1;
-	public const Int32 Modified = 2;
-}
+using Neco.AspNet.Middlewares.CompressedStaticFiles;
 
 public static class CommonHttpOperations {
 	// Slightly faster than using RequestHeaders from 'GetTypedHeaders'
 	public static Int32 IfNoneMatch(IHeaderDictionary requestHeaders, EntityTagHeaderValue? etag) {
+		ArgumentNullException.ThrowIfNull(requestHeaders);
+
 		StringValues ifNoneMatchHeader = requestHeaders.IfNoneMatch;
 		if (StringValues.IsNullOrEmpty(ifNoneMatchHeader)) return NotModifiedResult.HeaderNotPresent;
 
@@ -45,6 +42,8 @@ public static class CommonHttpOperations {
 	}
 
 	public static Int32 IfModifiedSince(IHeaderDictionary requestHeaders, DateTimeOffset? objectDateTime) {
+		ArgumentNullException.ThrowIfNull(requestHeaders);
+
 		StringValues ifModifiedSince = requestHeaders.IfModifiedSince;
 		if (StringValues.IsNullOrEmpty(ifModifiedSince)) return NotModifiedResult.HeaderNotPresent;
 
@@ -54,5 +53,25 @@ public static class CommonHttpOperations {
 		}
 
 		return NotModifiedResult.Modified;
+	}
+
+	public static CompressionMethod GetBestRequestedCompression(IHeaderDictionary requestHeaders) {
+		ArgumentNullException.ThrowIfNull(requestHeaders);
+
+		if (!requestHeaders.TryGetValue("Accept-Encoding", out StringValues acceptEncoding) || acceptEncoding.Count < 1)
+			return CompressionMethod.None;
+
+		for (Int32 i = 0; i < acceptEncoding.Count; i++) {
+			ReadOnlySpan<Char> ae = acceptEncoding[i].AsSpan();
+			if (ae.IndexOf("br", StringComparison.Ordinal) >= 0 || ae.IndexOf("*", StringComparison.Ordinal) >= 0) {
+				return CompressionMethod.Brotli;
+			}
+
+			if (ae.IndexOf("gzip", StringComparison.Ordinal) >= 0) {
+				return CompressionMethod.Gzip;
+			}
+		}
+
+		return CompressionMethod.None;
 	}
 }
