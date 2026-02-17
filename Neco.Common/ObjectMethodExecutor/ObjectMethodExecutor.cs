@@ -3,8 +3,6 @@
 
 namespace Neco.Common.ObjectMethodExecutor;
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
@@ -12,6 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
+[SuppressMessage("Design", "MA0049:Type name should not match containing namespace")]
 public sealed class ObjectMethodExecutor {
 	private readonly Object?[]? _parameterDefaultValues;
 	private readonly MethodExecutorAsync? _executorAsync;

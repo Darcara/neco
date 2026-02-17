@@ -35,11 +35,11 @@ internal static class PathUtils {
 		Int32 depth = 0;
 
 		foreach (StringSegment segment in tokenizer) {
-			if (segment.Equals(".") || segment.Equals("")) {
+			if (segment.Equals(".", StringComparison.Ordinal) || segment.Equals(String.Empty, StringComparison.Ordinal)) {
 				continue;
 			}
 
-			if (segment.Equals("..")) {
+			if (segment.Equals("..", StringComparison.Ordinal)) {
 				depth--;
 
 				if (depth == -1) {

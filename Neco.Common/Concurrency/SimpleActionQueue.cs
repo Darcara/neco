@@ -1,6 +1,5 @@
 namespace Neco.Common.Concurrency;
 
-using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
@@ -15,18 +14,18 @@ public sealed class SimpleActionQueue : IActionQueue {
 
 	public SimpleActionQueue(ILogger<SimpleActionQueue> logger) {
 		_logger = logger;
-		Task.Factory.StartNew(QueueWorker, this);
+		_ = Task.Factory.StartNew(QueueWorker, this, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
 	}
 
 	private static async Task QueueWorker(Object? state) {
 		SimpleActionQueue queue = state as SimpleActionQueue ?? throw new ArgumentException($"{nameof(QueueWorker)} expected {nameof(state)} to be {nameof(SimpleActionQueue)} but was {state?.GetType().FullName}", nameof(state));
 		ChannelReader<IQueuedAction> reader = queue._queue;
 		ILogger<SimpleActionQueue> logger = queue._logger;
-		await Task.Delay(100);
-		await foreach (IQueuedAction queuedTask in reader.ReadAllAsync()) {
+		await Task.Delay(100).ConfigureAwait(false);
+		await foreach (IQueuedAction queuedTask in reader.ReadAllAsync().ConfigureAwait(false)) {
 			Stopwatch sw = Stopwatch.StartNew();
 			try {
-				await queuedTask.InvokeAsync();
+				await queuedTask.InvokeAsync().ConfigureAwait(false);
 			}
 			catch (Exception e) {
 				logger.LogError(e, "Failed to execute queued task");
@@ -48,6 +47,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 	public Task WaitUntilEmpty() {
 		if (_numberOfItemsQueued == 0) return Task.CompletedTask;
 		lock (_queue) {
+			if (_numberOfItemsQueued == 0) return Task.CompletedTask;
 			_tcs ??= new TaskCompletionSource();
 			return _tcs.Task;
 		}
