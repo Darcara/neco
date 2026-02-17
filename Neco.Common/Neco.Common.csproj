@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackageVersion>0.2.3</PackageVersion>
+        <PackageVersion>0.2.4</PackageVersion>
         <Title>Neco.Common</Title>
         <PackageId>Neco.Common</PackageId>
         <Authors>Darcara</Authors>
@@ -37,7 +37,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Meziantou.Analyzer" Version="2.0.299" PrivateAssets="All"/>
+        <PackageReference Include="Meziantou.Analyzer" Version="3.0.1" PrivateAssets="All" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3"/>

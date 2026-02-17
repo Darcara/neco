@@ -17,7 +17,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackageVersion>0.1.2</PackageVersion>
+        <PackageVersion>0.1.3</PackageVersion>
         <Title>Neco.AspNet</Title>
         <PackageId>Neco.AspNet</PackageId>
         <Authors>Darcara</Authors>
@@ -35,14 +35,14 @@
 
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="Meziantou.Analyzer" Version="2.0.299" PrivateAssets="All"/>
+        <PackageReference Include="Meziantou.Analyzer" Version="3.0.1" PrivateAssets="All" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3"/>
         <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="All"/>
         <PackageReference Include="Roslynator.CodeFixes" Version="4.15.0" PrivateAssets="All"/>
         <PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" PrivateAssets="All"/>
-        <PackageReference Include="Neco.Common" Version="0.2.2" />
+        <PackageReference Include="Neco.Common" Version="0.2.3" />
     </ItemGroup>
 
     <ItemGroup>

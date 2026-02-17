@@ -17,7 +17,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackageVersion>0.2.3</PackageVersion>
+        <PackageVersion>0.2.4</PackageVersion>
         <Title>Neco.BenchmarkLibrary</Title>
         <PackageId>Neco.BenchmarkLibrary</PackageId>
         <Authors>Darcara</Authors>
@@ -36,7 +36,7 @@
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
         <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.8" />
-        <PackageReference Include="Neco.Common" Version="0.2.2" />
+        <PackageReference Include="Neco.Common" Version="0.2.3" />
     </ItemGroup>
 
     <ItemGroup>
