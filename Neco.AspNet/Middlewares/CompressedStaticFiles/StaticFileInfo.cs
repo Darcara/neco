@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
+using Neco.Common;
 
 internal sealed class StaticFileInfo {
 	public IFileInfo PhysicalFileInfo { get; }
@@ -82,6 +83,11 @@ internal sealed class StaticFileInfo {
 		_compressedBrotliResponse = compressedBrotliResponse;
 		_compressionStarted = 1;
 	}
+	
+	public void ResetCompressed() {
+		_compressedBrotliResponse = null;
+		_compressionStarted = 0;
+	}
 
 	private Task SendFileAsync(CompressionMethod clientRequestedCompression, HttpResponse response, Int64 offset, Int64 count, CancellationToken ct) {
 		if (clientRequestedCompression == CompressionMethod.Brotli && _compressedBrotliResponse != null) {
@@ -98,19 +104,20 @@ internal sealed class StaticFileInfo {
 			FileOptions options = FileOptions.Asynchronous | (OperatingSystem.IsWindows() ? FileOptions.SequentialScan : FileOptions.None);
 			// bufferSize=1 as a workaround to indicate unbuffered read stream
 			FileStream fileContent = new(file.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
-			// bufferSize=1 as a workaround to indicate unbuffered read stream
 			await using (fileContent.ConfigureAwait(false)) {
 				if (offset > 0L) fileContent.Seek(offset, SeekOrigin.Begin);
 				await response.StartAsync(ct).ConfigureAwait(false);
 
 				if (clientRequestedCompression == CompressionMethod.Brotli) {
-					await using BrotliStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
-					await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, 65536, ct).ConfigureAwait(false);
+					BrotliStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
+					await using(outputStream.ConfigureAwait(false))
+						await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 				} else if (clientRequestedCompression == CompressionMethod.Gzip) {
-					await using GZipStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
-					await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, 65536, ct).ConfigureAwait(false);
+					GZipStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
+					await using(outputStream.ConfigureAwait(false))
+						await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 				} else {
-					await StreamCopyOperation.CopyToAsync(fileContent, response.Body, count, 65536, ct).ConfigureAwait(false);
+					await StreamCopyOperation.CopyToAsync(fileContent, response.Body, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 				}
 			}
 		}
@@ -171,4 +178,6 @@ internal sealed class StaticFileInfo {
 	public override String ToString() => PhysicalFileInfo.PhysicalPath ?? String.Empty;
 
 	#endregion
+
+	
 }

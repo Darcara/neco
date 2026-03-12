@@ -23,7 +23,6 @@ using Neco.Common.Concurrency;
 using Neco.Common.Data;
 using Neco.Common.Extensions;
 
-// TODO FileGetSTatistics
 /// <summary>
 /// Enables serving static files for a given request path
 /// </summary>
@@ -31,8 +30,7 @@ using Neco.Common.Extensions;
 /// <para>Only brotli compressed files are cached in memory. Uncompressed or gzip compressed files are read directly from disk each time.</para>
 /// <para>Since brotly is widely supported, no request for gzip is expected.</para>
 /// </remarks>
-public sealed class CompressedStaticFilesMiddleware {
-	private const String _cacheFileExtension = ".csfmcache";
+public sealed partial class CompressedStaticFilesMiddleware{
 	private readonly TimeProvider _timeProvider;
 	private readonly ILogger<CompressedStaticFilesMiddleware> _logger;
 	private readonly CompressedStaticFilesOptions _options;
@@ -41,6 +39,7 @@ public sealed class CompressedStaticFilesMiddleware {
 	private readonly ConcurrentDictionary<String, StaticFileInfo> _knownStaticFiles = new(StringComparer.Ordinal);
 	private readonly IActionQueue _actionQueue;
 
+	/// <inheritdoc cref="CompressedStaticFilesMiddleware"/>
 	public CompressedStaticFilesMiddleware(RequestDelegate next, IWebHostEnvironment hostingEnv, IOptions<CompressedStaticFilesOptions> options, ILogger<CompressedStaticFilesMiddleware> logger, TimeProvider? timeProvider, IActionQueue? actionQueue) {
 		ArgumentNullException.ThrowIfNull(next);
 		ArgumentNullException.ThrowIfNull(hostingEnv);
@@ -55,6 +54,7 @@ public sealed class CompressedStaticFilesMiddleware {
 		_actionQueue = actionQueue ?? new SimpleActionQueue(NullLogger<SimpleActionQueue>.Instance);
 	}
 
+	/// <inheritdoc cref="IMiddleware.InvokeAsync" />
 	public Task InvokeAsync(HttpContext context) {
 		ArgumentNullException.ThrowIfNull(context);
 		HttpRequest request = context.Request;
@@ -62,33 +62,27 @@ public sealed class CompressedStaticFilesMiddleware {
 
 		// Validation
 		if (!HttpMethods.IsHead(request.Method) && !HttpMethods.IsGet(request.Method)) {
-			_logger.LogTrace("Request method not supported {Method}", request.Method);
+			LogRequestMethodNotSupportedMethod(request.Method);
 			StaticFileInfo.SendErrorResponseHeader(context.Response, StatusCodes.Status405MethodNotAllowed);
 			return Task.CompletedTask;
 		}
 
 		if (!request.Path.StartsWithSegments(_options.RequestPath, StringComparison.Ordinal, out PathString remainingRequestPath) || !remainingRequestPath.HasValue) {
-			_logger.LogWarning("Request path {Path} does not match request filter {Filter}", request.Path, _options.RequestPath);
+			LogRequestPathPathDoesNotMatchRequestFilterFilter(request.Path, _options.RequestPath);
 			StaticFileInfo.SendErrorResponseHeader(context.Response, StatusCodes.Status500InternalServerError);
 			return Task.CompletedTask;
 		}
 
 		if (!TryLookupContentType(_contentTypeProvider, _options, remainingRequestPath.Value, out _)) {
-			_logger.LogTrace("Request path {Path} does not match a supported file type", remainingRequestPath);
+			LogRequestPathPathDoesNotMatchASupportedFileType(remainingRequestPath);
 			StaticFileInfo.SendErrorResponseHeader(context.Response, StatusCodes.Status415UnsupportedMediaType);
 			return Task.CompletedTask;
 		}
 
 		CompressionMethod clientRequestedCompression = CommonHttpOperations.GetBestRequestedCompression(headers);
 
-		if (remainingRequestPath.Value.EndsWith(_cacheFileExtension, StringComparison.Ordinal)) {
-			_logger.LogTrace("Will not serve cache file directly: {Path}", remainingRequestPath);
-			StaticFileInfo.SendErrorResponseHeader(context.Response, StatusCodes.Status404NotFound);
-			return Task.CompletedTask;
-		}
-
 		if (!TryGetFileInfo(remainingRequestPath.Value, out StaticFileInfo? fileInfo)) {
-			_logger.LogTrace("File {Path} not found", remainingRequestPath);
+			LogFilePathNotFound(remainingRequestPath);
 			StaticFileInfo.SendErrorResponseHeader(context.Response, StatusCodes.Status404NotFound);
 			return Task.CompletedTask;
 		}
@@ -98,7 +92,7 @@ public sealed class CompressedStaticFilesMiddleware {
 		else
 			clientRequestedCompression = CompressionMethod.None;
 
-		_logger.LogTrace("Serving {Path} with {Compression} from {FilePath}", remainingRequestPath, clientRequestedCompression, fileInfo);
+		LogServingPathWithCompressionFromFilepath(remainingRequestPath, clientRequestedCompression, fileInfo);
 		RequestHeaders requestHeaders = request.GetTypedHeaders();
 
 		// 14.24 If-Match
@@ -136,8 +130,6 @@ public sealed class CompressedStaticFilesMiddleware {
 			return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status412PreconditionFailed, clientRequestedCompression);
 		}
 
-		// TODO Range from StaticFileContext
-
 		return fileInfo.SendFileResponse(context, clientRequestedCompression);
 	}
 
@@ -174,15 +166,8 @@ public sealed class CompressedStaticFilesMiddleware {
 			// .br file already exists ?
 			FileInfo providedCompressed = new(physicalFileInfo.PhysicalPath + ".br");
 			if (providedCompressed.Exists) {
-				_logger.LogDebug("Using provided file for {Compression}: {FilePath}", CompressionMethod.Brotli, providedCompressed.FullName);
+				LogUsingProvidedFileForCompressionFilepath(CompressionMethod.Brotli, providedCompressed.FullName);
 				return new StaticFileInfo(physicalFileInfo, contentType, assumeCompressible, File.ReadAllBytes(providedCompressed.FullName));
-			}
-
-			// cache file already exists from before?
-			FileInfo createdCompressed = new(physicalFileInfo.PhysicalPath + _cacheFileExtension);
-			if (createdCompressed.Exists) {
-				_logger.LogDebug("Using existing cache file for {Compression}: {FilePath}", CompressionMethod.Brotli, createdCompressed.FullName);
-				return new StaticFileInfo(physicalFileInfo, contentType, assumeCompressible, File.ReadAllBytes(createdCompressed.FullName));
 			}
 
 			return new StaticFileInfo(physicalFileInfo, contentType, assumeCompressible, null);
@@ -193,39 +178,59 @@ public sealed class CompressedStaticFilesMiddleware {
 
 	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TopLevel worker thread")]
 	private void EnsureCompression(StaticFileInfo fileInfo, CompressionMethod clientRequestedCompression) {
-		FileInfo compressedCacheFile = new(fileInfo.PhysicalFileInfo.PhysicalPath + _cacheFileExtension);
-		if (clientRequestedCompression == CompressionMethod.None || compressedCacheFile.Exists || !fileInfo.MarkForCompression())
+		if (clientRequestedCompression == CompressionMethod.None || !fileInfo.MarkForCompression())
 			return;
 
-		_actionQueue.Enqueue(async (sfi, outputFile) => {
+		_actionQueue.Enqueue(static async (sfi, logger) => {
 			Stopwatch sw = Stopwatch.StartNew();
-			String tempFile = outputFile.FullName + ".tmp";
 			try {
 				// SequentialScan is a perf hint that requires extra sys-call on non-Windows OSes. (From: File.ReadAllBytesAsync)
 				FileOptions options = FileOptions.Asynchronous | (OperatingSystem.IsWindows() ? FileOptions.SequentialScan : FileOptions.None);
 				// bufferSize=1 as a workaround to indicate unbuffered read/write stream
 				Stream inputStream = new FileStream(sfi.PhysicalFileInfo.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
+				Byte[] compressedData;
 				await using (inputStream.ConfigureAwait(false)) {
-					Stream outputFileStream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, options);
+					MemoryStream outputFileStream = new();
 					Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.SmallestSize, false);
 					await using (compressedStream.ConfigureAwait(false)) {
 						await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, sfi.Length, 65536, CancellationToken.None).ConfigureAwait(false);
 					}
+
+					compressedData = outputFileStream.ToArray();
 				}
 
-				File.Move(tempFile, outputFile.FullName, true);
-				outputFile.Attributes |= FileAttributes.Hidden | FileAttributes.Temporary;
-
-				outputFile.Refresh();
-
-				fileInfo.UpdateCompressed(await File.ReadAllBytesAsync(outputFile.FullName).ConfigureAwait(false));
-				Double reduction = 1D - outputFile.Length / (Double)sfi.Length;
-				_logger.LogInformation("Compressed file {FilePath} {OriginalFileSize} with {Compression} to {CompressedFileSize} in {Time} for a {ReductionPercent:P2} size reduction", sfi.PhysicalFileInfo.PhysicalPath, sfi.Length.ToFileSize(), CompressionMethod.Brotli, outputFile.Length.ToFileSize(), sw.Elapsed, reduction);
+				sfi.UpdateCompressed(compressedData);
+				Double reduction = 1D - compressedData.Length / (Double)sfi.Length;
+				LogCompressedFileFilepathOriginalfilesizeWithCompressionToCompressedfilesizeInTime(logger, sfi.PhysicalFileInfo.PhysicalPath, sfi.Length.ToFileSize(), CompressionMethod.Brotli, compressedData.Length.ToFileSize(), sw.Elapsed, reduction);
 			}
 			catch (Exception e) {
-				_logger.LogError(e, "Failed to compress {FilePath}", sfi.PhysicalFileInfo.PhysicalPath);
-				if (File.Exists(tempFile)) File.Delete(tempFile);
+				LogFailedToCompressFilepath(logger, e, sfi.PhysicalFileInfo.PhysicalPath);
+				sfi.ResetCompressed();
 			}
-		}, fileInfo, compressedCacheFile);
+		}, fileInfo, _logger);
 	}
+
+	[LoggerMessage(LogLevel.Trace, "Serving {path} with {compression} from {filePath}")]
+	partial void LogServingPathWithCompressionFromFilepath(PathString path, CompressionMethod compression, StaticFileInfo filePath);
+
+	[LoggerMessage(LogLevel.Trace, "File {path} not found")]
+	partial void LogFilePathNotFound(PathString path);
+
+	[LoggerMessage(LogLevel.Trace, "Request path {path} does not match a supported file type")]
+	partial void LogRequestPathPathDoesNotMatchASupportedFileType(PathString path);
+
+	[LoggerMessage(LogLevel.Warning, "Request path {path} does not match request filter {filter}")]
+	partial void LogRequestPathPathDoesNotMatchRequestFilterFilter(PathString path, String filter);
+
+	[LoggerMessage(LogLevel.Trace, "Request method not supported {method}")]
+	partial void LogRequestMethodNotSupportedMethod(String method);
+
+	[LoggerMessage(LogLevel.Debug, "Using provided file for {compression}: {filePath}")]
+	partial void LogUsingProvidedFileForCompressionFilepath(CompressionMethod compression, String filePath);
+
+	[LoggerMessage(LogLevel.Information, "Compressed file {filePath} {originalFileSize} with {compression} to {compressedFileSize} in {time} for a {reductionPercent:P2} size reduction")]
+	static partial void LogCompressedFileFilepathOriginalfilesizeWithCompressionToCompressedfilesizeInTime(ILogger logger, String? filePath, String originalFileSize, CompressionMethod compression, String compressedFileSize, TimeSpan time, Double reductionPercent);
+
+	[LoggerMessage(LogLevel.Error, "Failed to compress {filePath}")]
+	static partial void LogFailedToCompressFilepath(ILogger logger, Exception e, String? filePath);
 }
