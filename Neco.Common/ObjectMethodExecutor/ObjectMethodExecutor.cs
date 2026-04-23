@@ -26,7 +26,7 @@ public sealed class ObjectMethodExecutor {
 			typeof(Action<Object, Action>), // unsafeOnCompletedMethod
 		])!;
 
-	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo targetTypeInfo) {
+	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo? targetTypeInfo) {
 		ArgumentNullException.ThrowIfNull(methodInfo);
 
 		MethodInfo = methodInfo;
@@ -37,7 +37,7 @@ public sealed class ObjectMethodExecutor {
 
 	[RequiresUnreferencedCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
 	[RequiresDynamicCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
-	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo targetTypeInfo, Object?[]? parameterDefaultValues) : this(methodInfo, targetTypeInfo) {
+	private ObjectMethodExecutor(MethodInfo methodInfo, TypeInfo? targetTypeInfo, Object?[]? parameterDefaultValues) : this(methodInfo, targetTypeInfo) {
 		Boolean isAwaitable = AwaitableInfo.IsTypeAwaitable(MethodReturnType, out AwaitableInfo awaitableInfo);
 
 		IsMethodAsync = isAwaitable;
@@ -74,17 +74,17 @@ public sealed class ObjectMethodExecutor {
 		}
 	}
 
-	private delegate ObjectMethodExecutorAwaitable MethodExecutorAsync(Object target, Object?[]? parameters);
+	private delegate ObjectMethodExecutorAwaitable MethodExecutorAsync(Object? target, Object?[]? parameters);
 
-	private delegate Object? MethodExecutor(Object target, Object?[]? parameters);
+	private delegate Object? MethodExecutor(Object? target, Object?[]? parameters);
 
-	private delegate void VoidMethodExecutor(Object target, Object?[]? parameters);
+	private delegate void VoidMethodExecutor(Object? target, Object?[]? parameters);
 
 	public MethodInfo MethodInfo { get; }
 
 	public ParameterInfo[] MethodParameters { get; }
 
-	public TypeInfo TargetTypeInfo { get; }
+	public TypeInfo? TargetTypeInfo { get; }
 
 	public Type? AsyncResultType { get; }
 
@@ -95,7 +95,7 @@ public sealed class ObjectMethodExecutor {
 
 	[RequiresUnreferencedCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
 	[RequiresDynamicCode("ObjectMethodExecutor performs reflection on arbitrary types.")]
-	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo targetTypeInfo) {
+	public static ObjectMethodExecutor Create(MethodInfo methodInfo, TypeInfo? targetTypeInfo) {
 		return new ObjectMethodExecutor(methodInfo, targetTypeInfo, null);
 	}
 
@@ -134,7 +134,7 @@ public sealed class ObjectMethodExecutor {
 	/// <param name="target">The object whose method is to be executed.</param>
 	/// <param name="parameters">Parameters to pass to the method.</param>
 	/// <returns>The method return value.</returns>
-	public Object? Execute(Object target, Object?[]? parameters) {
+	public Object? Execute(Object? target, Object?[]? parameters) {
 		Debug.Assert(_executor != null, "Sync execution is not supported.");
 		return _executor(target, parameters);
 	}
@@ -162,7 +162,7 @@ public sealed class ObjectMethodExecutor {
 	/// <param name="target">The object whose method is to be executed.</param>
 	/// <param name="parameters">Parameters to pass to the method.</param>
 	/// <returns>An object that you can "await" to get the method return value.</returns>
-	public ObjectMethodExecutorAwaitable ExecuteAsync(Object target, Object?[]? parameters) {
+	public ObjectMethodExecutorAwaitable ExecuteAsync(Object? target, Object?[]? parameters) {
 		Debug.Assert(_executorAsync != null, "Async execution is not supported.");
 		return _executorAsync(target, parameters);
 	}
@@ -179,7 +179,7 @@ public sealed class ObjectMethodExecutor {
 		return _parameterDefaultValues[index];
 	}
 
-	private static MethodExecutor GetExecutor(MethodInfo methodInfo, TypeInfo targetTypeInfo) {
+	private static MethodExecutor GetExecutor(MethodInfo methodInfo, TypeInfo? targetTypeInfo) {
 		// Parameters to executor
 		ParameterExpression targetParameter = Expression.Parameter(typeof(Object), "target");
 		ParameterExpression parametersParameter = Expression.Parameter(typeof(Object?[]), "parameters");
@@ -197,8 +197,14 @@ public sealed class ObjectMethodExecutor {
 		}
 
 		// Call method
-		UnaryExpression instanceCast = Expression.Convert(targetParameter, targetTypeInfo.AsType());
-		MethodCallExpression methodCall = Expression.Call(instanceCast, methodInfo, parameters);
+		MethodCallExpression methodCall;
+		if(targetTypeInfo == null) {
+			methodCall = Expression.Call(null, methodInfo, parameters);
+		}
+		else {
+			UnaryExpression instanceCast = Expression.Convert(targetParameter, targetTypeInfo.AsType());
+			methodCall = Expression.Call(instanceCast, methodInfo, parameters);
+		}
 
 		// methodCall is "((Ttarget) target) method((T0) parameters[0], (T1) parameters[1], ...)"
 		// Create function
@@ -223,7 +229,7 @@ public sealed class ObjectMethodExecutor {
 
 	private static MethodExecutorAsync GetExecutorAsync(
 		MethodInfo methodInfo,
-		TypeInfo targetTypeInfo,
+		TypeInfo? targetTypeInfo,
 		AwaitableInfo awaitableInfo) {
 		// Parameters to executor
 		ParameterExpression targetParameter = Expression.Parameter(typeof(Object), "target");
@@ -242,9 +248,13 @@ public sealed class ObjectMethodExecutor {
 		}
 
 		// Call method
-		UnaryExpression instanceCast = Expression.Convert(targetParameter, targetTypeInfo.AsType());
-		MethodCallExpression methodCall = Expression.Call(instanceCast, methodInfo, parameters);
-
+		MethodCallExpression methodCall;
+		if(targetTypeInfo == null) {
+			methodCall = Expression.Call(null, methodInfo, parameters);
+		} else {
+			UnaryExpression instanceCast = Expression.Convert(targetParameter, targetTypeInfo.AsType());
+			methodCall = Expression.Call(instanceCast, methodInfo, parameters);
+		}
 		// Using the method return value, construct an ObjectMethodExecutorAwaitable based on
 		// the info we have about its implementation of the awaitable pattern. Note that all
 		// the funcs/actions we construct here are precompiled, so that only one instance of

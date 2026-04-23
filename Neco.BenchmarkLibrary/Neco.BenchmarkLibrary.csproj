@@ -30,6 +30,9 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EmbedAllSources>true</EmbedAllSources>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PublishDocumentationFile>true</PublishDocumentationFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <DebugType>portable</DebugType>
     </PropertyGroup>
 
