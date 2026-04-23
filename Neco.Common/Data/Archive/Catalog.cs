@@ -1,13 +1,9 @@
 ﻿namespace Neco.Common.Data.Archive;
 
-using System;
 using System.Buffers;
 using System.Buffers.Text;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Compression;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Unicode;
 using System.Threading.Tasks;
@@ -81,6 +77,32 @@ public sealed class Catalog : IDisposable, IAsyncDisposable {
 		FileStream dataFileStream = new(dataFile, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, MagicNumbers.DefaultStreamBufferSize, false);
 
 		Catalog cat = new(catalogFile, dataFile, catalogFileStream, dataFileStream, CatalogOptions.FromCatalog(catalogFileStream, options ?? BasicCatalogOptions.DefaultBasic) ?? CatalogOptions.DefaultFrom(options));
+		try {
+			cat.ReadEntries(cat._entries, dataInfo.Length);
+		}
+		catch (Exception) {
+			cat.Dispose();
+			throw;
+		}
+
+		return cat;
+	}
+
+	public static Catalog OpenReadOnly(String baseName) {
+		String catalogFile = Path.ChangeExtension(baseName, "cat");
+		String dataFile = Path.ChangeExtension(baseName, "bin");
+
+		FileInfo catalogInfo = new(catalogFile);
+		if (!catalogInfo.Exists)
+			throw new ArchiveException($"Missing catalog file: {catalogFile}");
+
+		FileInfo dataInfo = new(dataFile);
+		if (!dataInfo.Exists) throw new ArchiveException($"Missing catalog file: {dataFile}");
+
+		FileStream catalogFileStream = new(catalogFile, FileMode.Open, FileAccess.Read, FileShare.Read, MagicNumbers.DefaultStreamBufferSize, false);
+		FileStream dataFileStream = new(dataFile, FileMode.Open, FileAccess.Read, FileShare.Read, MagicNumbers.DefaultStreamBufferSize, false);
+
+		Catalog cat = new(catalogFile, dataFile, catalogFileStream, dataFileStream, CatalogOptions.FromCatalog(catalogFileStream, BasicCatalogOptions.DefaultBasic) ?? BasicCatalogOptions.DefaultBasic);
 		try {
 			cat.ReadEntries(cat._entries, dataInfo.Length);
 		}
