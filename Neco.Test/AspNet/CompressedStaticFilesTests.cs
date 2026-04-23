@@ -82,9 +82,11 @@ internal class CompressedStaticFilesTests : ATest {
 		httpContext.Request.Headers.AcceptEncoding = "br";
 
 		await m.InvokeAsync(httpContext);
+		await httpContext.Response.BodyWriter.FlushAsync();
 		using (Assert.EnterMultipleScope()) {
 			Assert.That(httpContext.Response.StatusCode, Is.EqualTo((Int32)HttpStatusCode.OK));
 			Assert.That(httpContext.Response.Body.Length, Is.EqualTo(3));
+			Assert.That(httpContext.Response.ContentLength, Is.EqualTo(3));
 			Assert.That(httpContext.Response.Headers.ContentEncoding, Contains.Item("br"));
 		}
 	}
@@ -208,6 +210,17 @@ internal class CompressedStaticFilesTests : ATest {
 	public async Task GivesHeadWhenAsked() {
 		CompressedStaticFilesMiddleware m = CreateMiddleware(true);
 		HttpContext httpContext = CreateContext("/test.txt", HttpMethods.Head);
+		httpContext.Request.Headers.AcceptEncoding = "br";
+
+		await m.InvokeAsync(httpContext);
+		using (Assert.EnterMultipleScope()) {
+			Assert.That(httpContext.Response.StatusCode, Is.EqualTo((Int32)HttpStatusCode.OK));
+			Assert.That(httpContext.Response.Headers.ContentEncoding, Contains.Item("br"));
+			Assert.That(httpContext.Response.Headers.ContentLength, Is.Null);
+			Assert.That(httpContext.Response.Body.Length, Is.Zero);
+		}
+		
+		httpContext = CreateContext("/someTextFile.txt");
 		httpContext.Request.Headers.AcceptEncoding = "br";
 
 		await m.InvokeAsync(httpContext);
