@@ -1,9 +1,6 @@
 namespace Neco.Common.Extensions;
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -175,7 +172,7 @@ public static partial class TypeExtensions {
 	/// <param name="givenType"></param>
 	/// <param name="genericType"></param>
 	/// <returns></returns>
-	public static Boolean IsAssignableToGenericType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]this Type givenType, Type genericType) {
+	public static Boolean IsAssignableToGenericType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] this Type givenType, Type genericType) {
 		Type[] interfaceTypes = givenType.GetInterfaces();
 
 		foreach (Type it in interfaceTypes) {
@@ -192,12 +189,14 @@ public static partial class TypeExtensions {
 		return IsAssignableToGenericType(baseType, genericType);
 	}
 
-	public static IEnumerable<MethodInfo> GetMethodsIncludingSuperInterfaces([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicMethods)]this Type type) {
-		foreach (MethodInfo? method in type.GetMethods()) {
+	public static IEnumerable<MethodInfo> GetMethodsIncludingSuperInterfaces([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicMethods)] this Type type) {
+		ArgumentNullException.ThrowIfNull(type);
+
+		foreach (MethodInfo method in type.GetMethods()) {
 			yield return method;
 		}
 
-		foreach (MethodInfo? method in type.GetInterfaces().SelectMany(GetMethodsIncludingSuperInterfaces)) {
+		foreach (MethodInfo? method in type.GetInterfaces().SelectMany(i => i.GetMethods())) {
 			yield return method;
 		}
 	}

@@ -14,7 +14,7 @@ public sealed class SimpleActionQueue : IActionQueue {
 
 	public SimpleActionQueue(ILogger<SimpleActionQueue> logger) {
 		_logger = logger;
-		_ = Task.Factory.StartNew(QueueWorker, this, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
+		_ = Task.Factory.StartNew(QueueWorker, this, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously |TaskCreationOptions.LongRunning, TaskScheduler.Default);
 	}
 
 	private static async Task QueueWorker(Object? state) {

@@ -1,6 +1,5 @@
 namespace Neco.Common.Extensions;
 
-using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +45,7 @@ public static class TaskExtensions {
 			return;
 		}
 
-		valueTask.AsTask().GetAwaiter().GetResult();
+		valueTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 	}
 
 	// see: https://stackoverflow.com/questions/72715689/valuetask-instances-should-not-have-their-result-directly-accessed-unless-the-in/72716573#72716573
@@ -56,14 +55,14 @@ public static class TaskExtensions {
 			return valueTask.GetAwaiter().GetResult();
 		}
 
-		return valueTask.AsTask().GetAwaiter().GetResult();
+		return valueTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 	}
 
 	/// <remarks>Not required. Only provided as parity for ValueTask.GetResultBlocking</remarks>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static void GetResultBlocking(this Task task) => task.GetAwaiter().GetResult();
+	public static void GetResultBlocking(this Task task) => task.ConfigureAwait(false).GetAwaiter().GetResult();
 
 	/// <remarks>Not required. Only provided as parity for ValueTask.GetResultBlocking</remarks>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static T GetResultBlocking<T>(this Task<T> task) => task.GetAwaiter().GetResult();
+	public static T GetResultBlocking<T>(this Task<T> task) => task.ConfigureAwait(false).GetAwaiter().GetResult();
 }
