@@ -1,9 +1,6 @@
 namespace Neco.Common.Helper;
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using Neco.Common.Extensions;
 
@@ -13,6 +10,7 @@ public static class ReflectionHelper {
 	/// Returns all properties (including from base classes) that are annotated with the given attribute type.
 	/// </summary>
 	[RequiresUnreferencedCode("Inspecting members might require types that cannot be statically analyzed.")]
+	[SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
 	public static IEnumerable<PropertyInfo> GetPropertyWithAnyAttribute<TAttribute>(Type typeToInspect) where TAttribute : Attribute {
 		ArgumentNullException.ThrowIfNull(typeToInspect);
 		HashSet<PropertyInfo> properties = typeToInspect.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance).ToHashSet();

@@ -1,12 +1,7 @@
 namespace Neco.Test.Common.Extensions;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using FluentAssertions;
 using Neco.Common.Extensions;
-using NUnit.Framework;
 
 [TestFixture]
 public class TypeExtensionTests {
@@ -84,43 +79,45 @@ public class TypeExtensionTests {
 
 	[Test]
 	public void GetCustomAttributes() {
-		typeof(ImplementingClass)
-			.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>()
-			.Should().HaveCount(3);
-		typeof(ImplementingClass)
-			.GetCustomAttributesIncludingBaseInterfaces<MultiAttribute>()
-			.Should().HaveCount(3);
-		typeof(ImplementingClass)
-			.GetCustomAttributesIncludingBaseInterfaces<SingleNonInheritingAttribute>()
-			.Should().HaveCount(3);
+		using (Assert.EnterMultipleScope()) {
+			Assert.That(typeof(ImplementingClass).GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>(), Has.Exactly(4).Items);
+			Assert.That(typeof(ImplementingClass).GetCustomAttributesIncludingBaseInterfaces<MultiAttribute>(), Has.Exactly(4).Items);
+			Assert.That(typeof(ImplementingClass).GetCustomAttributesIncludingBaseInterfaces<SingleNonInheritingAttribute>(), Has.Exactly(4).Items);
+		}
 	}
 
-	[Test]
-	public void GetCustomAttributesForMember() {
-		MethodInfo? methodInfo = typeof(ImplementingClass).GetMethod(nameof(IInterface.SomeMethod));
+	[TestCase(nameof(IInterface.SomeMethod), 3)]
+	[TestCase("PrivateMethod", 1)]
+	[TestCase("ProtectedMethod", 2)]
+	[TestCase("PrivateProperty", 1)]
+	[TestCase("ProtectedProperty", 2)]
+	[TestCase("PrivateField", 1)]
+	public void GetCustomAttributesForMember(String member, Int32 numberOfAttributes) {
+		MemberInfo methodInfo = typeof(ImplementingClass).GetMember(member, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single();
 		Assert.That(methodInfo, Is.Not.Null);
 
-		methodInfo
-			.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>()
-			.Should().HaveCount(3);
+		using (Assert.EnterMultipleScope()) {
+			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>(), Has.Exactly(numberOfAttributes).Items);
+			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<MultiAttribute>(), Has.Exactly(numberOfAttributes).Items);
+			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<SingleNonInheritingAttribute>(), Has.Exactly(numberOfAttributes).Items);
+		}
+	}
 
-		methodInfo
-			.GetCustomAttributesIncludingBaseInterfaces(nameof(MultiAttribute))
-			.Should().HaveCount(3);
-
-		methodInfo
-			.GetCustomAttributesIncludingBaseInterfaces(typeof(SingleNonInheritingAttribute))
-			.Should().HaveCount(3);
+	[Single("IBaseInterface")]
+	[SingleNonInheriting("IBaseInterface")]
+	[Multi("IBaseInterface")]
+	private interface IBaseInterface {
+		[Single("IBaseInterface.SomeMethod")]
+		[SingleNonInheriting("IBaseInterface.SomeMethod")]
+		[Multi("IBaseInterface.SomeMethod")]
+		public void SomeMethod();
 	}
 
 	[Single("Interface")]
 	[SingleNonInheriting("Interface")]
 	[Multi("Interface")]
-	private interface IInterface {
-		[Single("Interface.SomeMethod")]
-		[SingleNonInheriting("Interface.SomeMethod")]
-		[Multi("Interface.SomeMethod")]
-		public void SomeMethod();
+	private interface IInterface : IBaseInterface {
+
 	}
 
 	[Single("ABaseClass")]
@@ -133,6 +130,11 @@ public class TypeExtensionTests {
 		public abstract Boolean Equals(T? other);
 
 		#endregion
+
+		[Single("ABaseClass.ProtectedProperty")]
+		[SingleNonInheriting("ABaseClass.ProtectedProperty")]
+		[Multi("ABaseClass.ProtectedProperty")]
+		protected virtual String ProtectedProperty { get; set; }
 
 		private class NestedClass<TS> {
 			protected T? MethodWithLambda(T someT, TS someS) {
@@ -149,6 +151,11 @@ public class TypeExtensionTests {
 		[Multi("ABaseClass.SomeMethod")]
 		public abstract void SomeMethod();
 
+		[Single("ABaseClass.ProtectedMethod")]
+		[SingleNonInheriting("ABaseClass.ProtectedMethod")]
+		[Multi("ABaseClass.ProtectedMethod")]
+		protected virtual void ProtectedMethod() => throw new NotImplementedException();
+
 		#endregion
 	}
 
@@ -156,6 +163,19 @@ public class TypeExtensionTests {
 	[SingleNonInheriting("ImplementingClass")]
 	[Multi("ImplementingClass")]
 	private sealed class ImplementingClass : ABaseClass<String> {
+		[Single("ImplementingClass.PrivateField")] [SingleNonInheriting("ImplementingClass.PrivateField")] [Multi("ImplementingClass.PrivateField")]
+		private String? PrivateField;
+
+		[Single("ImplementingClass.PrivateProperty")]
+		[SingleNonInheriting("ImplementingClass.PrivateProperty")]
+		[Multi("ImplementingClass.PrivateProperty")]
+		private String? PrivateProperty { get; set; }
+
+		[Single("ImplementingClass.ProtectedProperty")]
+		[SingleNonInheriting("ImplementingClass.ProtectedProperty")]
+		[Multi("ImplementingClass.ProtectedProperty")]
+		protected override String ProtectedProperty { get; set; }
+
 		#region Overrides of ABaseClass<string>
 
 		/// <inheritdoc />
@@ -167,18 +187,31 @@ public class TypeExtensionTests {
 		[Multi("ImplementingClass.SomeMethod")]
 		public override void SomeMethod() => throw new NotImplementedException();
 
+		[Single("ImplementingClass.ProtectedMethod")]
+		[SingleNonInheriting("ImplementingClass.ProtectedMethod")]
+		[Multi("ImplementingClass.ProtectedMethod")]
+		protected override void ProtectedMethod() => throw new NotImplementedException();
+
+		[Single("ImplementingClass.PrivateMethod")]
+		[SingleNonInheriting("ImplementingClass.PrivateMethod")]
+		[Multi("ImplementingClass.PrivateMethod")]
+		private void PrivateMethod() => throw new NotImplementedException();
+
 		#endregion
 	}
 
 	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = true)]
 	private sealed class SingleAttribute(String Data) : Attribute {
+		public override String ToString() => Data;
 	}
 
 	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)]
 	private sealed class SingleNonInheritingAttribute(String Data) : Attribute {
+		public override String ToString() => Data;
 	}
 
 	[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = true)]
 	private sealed class MultiAttribute(String Data) : Attribute {
+		public override String ToString() => Data;
 	}
 }

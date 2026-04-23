@@ -1,12 +1,9 @@
 namespace Neco.Test.Common.Helper;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using FluentAssertions;
+using Neco.Common.Extensions;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public class ReflectionHelperTests {
@@ -89,14 +86,16 @@ public class ReflectionHelperTests {
 	[Test]
 	public void GetPropertiesWithAttribute() {
 		List<PropertyInfo> properties = ReflectionHelper.GetPropertyWithAnyAttribute<CustomAttribute>(typeof(BaseClass)).ToList();
+		properties.ForEach(p => Console.WriteLine($"{p.PropertyType.GetGenericName()} {p.Name, 25} from {p.ReflectedType.GetGenericName(), 10} in {p.DeclaringType.GetGenericName(), 10}"));
+		
 		// These are found twice
 		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicProperty));
 		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicImplementedProperty));
 		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicSharedProperty));
+		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicAbstractProperty));
 		// These are found once
 		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicOverriddenProperty));
-		properties.Should().Contain(m => m.Name == nameof(IBaseInterface.PublicAbstractProperty));
-		properties.Should().HaveCount(8);
+		properties.Should().HaveCount(9);
 
 		properties.Should().NotContain(m => m.Name == nameof(IBaseInterface.InterfaceProperty));
 	}
