@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <ProjectGuid>14E949C3-7F4A-45AA-A1CD-EEAC05B3EFFC</ProjectGuid>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <OutputType>Library</OutputType>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <IsTrimmable>true</IsTrimmable>
+        <IsAotCompatible>true</IsAotCompatible>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableAotAnalyzer>true</EnableAotAnalyzer>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageVersion>0.0.1</PackageVersion>
+        <Title>Neco.Web</Title>
+        <PackageId>Neco.Web</PackageId>
+        <Authors>Darcara</Authors>
+        <Copyright>Copyright (c) Darcara</Copyright>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <Description>Necessary Code for AspNet - Commonly required web client code fragments</Description>
+        <PackageProjectUrl>https://github.com/Darcara/neco</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Darcara/neco</RepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EmbedAllSources>true</EmbedAllSources>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+        <PackageReference Include="Meziantou.Analyzer" Version="3.0.1" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3"/>
+        <PackageReference Include="Neco.Common" Version="0.2.3" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="All"/>
+        <PackageReference Include="Roslynator.CodeFixes" Version="4.15.0" PrivateAssets="All"/>
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" PrivateAssets="All"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Neco.Test" />
+        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="README.md" />
+    </ItemGroup>
+
+</Project>
