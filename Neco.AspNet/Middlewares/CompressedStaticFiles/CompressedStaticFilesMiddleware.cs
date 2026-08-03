@@ -24,13 +24,13 @@ using Neco.Common.Data;
 using Neco.Common.Extensions;
 
 /// <summary>
-/// Enables serving static files for a given request path
+/// Enables serving static files for a given request path from memory
 /// </summary>
 /// <remarks>
 /// <para>Only brotli compressed files are cached in memory. Uncompressed or gzip compressed files are read directly from disk each time.</para>
-/// <para>Since brotly is widely supported, no request for gzip is expected.</para>
+/// <para>Since brotli is widely supported, no request for gzip is expected.</para>
 /// </remarks>
-public sealed partial class CompressedStaticFilesMiddleware{
+public sealed partial class CompressedStaticFilesMiddleware {
 	private readonly TimeProvider _timeProvider;
 	private readonly ILogger<CompressedStaticFilesMiddleware> _logger;
 	private readonly CompressedStaticFilesOptions _options;
@@ -101,7 +101,7 @@ public sealed partial class CompressedStaticFilesMiddleware{
 			for (Int32 index = 0; index < ifMatch.Count; index++) {
 				EntityTagHeaderValue etag = ifMatch[index];
 				if (etag.Equals(EntityTagHeaderValue.Any) || etag.Compare(fileInfo.Etag, useStrongComparison: true)) {
-					return fileInfo.SendFileResponse(context, clientRequestedCompression);
+					return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 				}
 			}
 
@@ -111,7 +111,7 @@ public sealed partial class CompressedStaticFilesMiddleware{
 		// 14.26 If-None-Match
 		switch (CommonHttpOperations.IfNoneMatch(headers, fileInfo.Etag)) {
 			case NotModifiedResult.NotModified: return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
-			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression);
+			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 		}
 
 		DateTimeOffset now = _timeProvider.GetUtcNow();
@@ -119,18 +119,18 @@ public sealed partial class CompressedStaticFilesMiddleware{
 		// 14.25 If-Modified-Since
 		switch (CommonHttpOperations.IfModifiedSince(headers, fileInfo.LastModified)) {
 			case NotModifiedResult.NotModified: return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status304NotModified, clientRequestedCompression);
-			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression);
+			case NotModifiedResult.Modified: return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 		}
 
 		// 14.28 If-Unmodified-Since
 		DateTimeOffset? ifUnmodifiedSince = requestHeaders.IfUnmodifiedSince;
 		if (ifUnmodifiedSince <= now) {
 			if (ifUnmodifiedSince >= fileInfo.LastModified)
-				return fileInfo.SendFileResponse(context, clientRequestedCompression);
+				return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 			return fileInfo.SendHeaderResponse(context.Response, StatusCodes.Status412PreconditionFailed, clientRequestedCompression);
 		}
 
-		return fileInfo.SendFileResponse(context, clientRequestedCompression);
+		return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 	}
 
 	private static Boolean TryLookupContentType(IContentTypeProvider contentTypeProvider, CompressedStaticFilesOptions options, String path, out String? contentType) {
@@ -163,13 +163,6 @@ public sealed partial class CompressedStaticFilesMiddleware{
 			TryLookupContentType(_contentTypeProvider, _options, physicalFileInfo.PhysicalPath, out String? contentType);
 			Boolean assumeCompressible = _options.CompressionLookup == null || _options.CompressionLookup?.DoesFileCompress(Path.GetExtension(physicalFileInfo.PhysicalPath)) == FileCompression.Compressible;
 
-			// .br file already exists ?
-			FileInfo providedCompressed = new(physicalFileInfo.PhysicalPath + ".br");
-			if (providedCompressed.Exists) {
-				LogUsingProvidedFileForCompressionFilepath(CompressionMethod.Brotli, providedCompressed.FullName);
-				return new StaticFileInfo(physicalFileInfo, contentType, assumeCompressible, File.ReadAllBytes(providedCompressed.FullName));
-			}
-
 			return new StaticFileInfo(physicalFileInfo, contentType, assumeCompressible, null);
 		});
 
@@ -181,33 +174,36 @@ public sealed partial class CompressedStaticFilesMiddleware{
 		if (clientRequestedCompression == CompressionMethod.None || !fileInfo.MarkForCompression())
 			return;
 
-		_actionQueue.Enqueue(static async (sfi, logger) => {
+		_actionQueue.Enqueue(static async ((StaticFileInfo sfi, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate) x, ILogger logger) => {
 			Stopwatch sw = Stopwatch.StartNew();
 			try {
 				// SequentialScan is a perf hint that requires extra sys-call on non-Windows OSes. (From: File.ReadAllBytesAsync)
 				FileOptions options = FileOptions.Asynchronous | (OperatingSystem.IsWindows() ? FileOptions.SequentialScan : FileOptions.None);
 				// bufferSize=1 as a workaround to indicate unbuffered read/write stream
-				Stream inputStream = new FileStream(sfi.PhysicalFileInfo.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
+				Stream inputStream = new FileStream(x.sfi.PhysicalFileInfo.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
 				Byte[] compressedData;
 				await using (inputStream.ConfigureAwait(false)) {
 					MemoryStream outputFileStream = new();
 					Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.SmallestSize, false);
 					await using (compressedStream.ConfigureAwait(false)) {
-						await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, sfi.Length, 65536, CancellationToken.None).ConfigureAwait(false);
+						if (x.mutate != null)
+							await x.mutate(x.sfi.PhysicalFileInfo, inputStream, compressedStream, x.sfi.Length, CancellationToken.None).ConfigureAwait(false);
+						else
+							await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, x.sfi.Length, 65536, CancellationToken.None).ConfigureAwait(false);
 					}
 
 					compressedData = outputFileStream.ToArray();
 				}
 
-				sfi.UpdateCompressed(compressedData);
-				Double reduction = 1D - compressedData.Length / (Double)sfi.Length;
-				LogCompressedFileFilepathOriginalfilesizeWithCompressionToCompressedfilesizeInTime(logger, sfi.PhysicalFileInfo.PhysicalPath, sfi.Length.ToFileSize(), CompressionMethod.Brotli, compressedData.Length.ToFileSize(), sw.Elapsed, reduction);
+				x.sfi.UpdateCompressed(compressedData);
+				Double reduction = 1D - compressedData.Length / (Double)x.sfi.Length;
+				LogCompressedFileFilepathOriginalfilesizeWithCompressionToCompressedfilesizeInTime(logger, x.sfi.PhysicalFileInfo.PhysicalPath, x.sfi.Length.ToFileSize(), CompressionMethod.Brotli, compressedData.Length.ToFileSize(), sw.Elapsed, reduction);
 			}
 			catch (Exception e) {
-				LogFailedToCompressFilepath(logger, e, sfi.PhysicalFileInfo.PhysicalPath);
-				sfi.ResetCompressed();
+				LogFailedToCompressFilepath(logger, e, x.sfi.PhysicalFileInfo.PhysicalPath);
+				x.sfi.ResetCompressed();
 			}
-		}, fileInfo, _logger);
+		}, (fileInfo, _options.MutateFile), _logger);
 	}
 
 	[LoggerMessage(LogLevel.Trace, "Serving {path} with {compression} from {filePath}")]
@@ -224,9 +220,6 @@ public sealed partial class CompressedStaticFilesMiddleware{
 
 	[LoggerMessage(LogLevel.Trace, "Request method not supported {method}")]
 	partial void LogRequestMethodNotSupportedMethod(String method);
-
-	[LoggerMessage(LogLevel.Debug, "Using provided file for {compression}: {filePath}")]
-	partial void LogUsingProvidedFileForCompressionFilepath(CompressionMethod compression, String filePath);
 
 	[LoggerMessage(LogLevel.Information, "Compressed file {filePath} {originalFileSize} with {compression} to {compressedFileSize} in {time} for a {reductionPercent:P2} size reduction")]
 	static partial void LogCompressedFileFilepathOriginalfilesizeWithCompressionToCompressedfilesizeInTime(ILogger logger, String? filePath, String originalFileSize, CompressionMethod compression, String compressedFileSize, TimeSpan time, Double reductionPercent);

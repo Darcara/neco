@@ -67,6 +67,6 @@ public static class ApplicationBuilderExtensions {
 			responseHeaders[HeaderNames.ContentEncoding] = "gzip";
 		}
 
-		return StaticFileInfo.SendFileAsyncCore(fileinfo, compression, context.Response, 0, fileinfo.Length, context.RequestAborted);
+		return StaticFileInfo.SendFileAsyncCore(fileinfo, compression, null, context.Response, 0, fileinfo.Length, context.RequestAborted);
 	}
 }

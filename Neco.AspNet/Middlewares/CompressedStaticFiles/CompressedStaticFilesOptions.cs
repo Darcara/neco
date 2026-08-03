@@ -1,10 +1,16 @@
 namespace Neco.AspNet.Middlewares.CompressedStaticFiles;
 
 using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Neco.Common.Data;
 
+/// <summary>
+/// Options for <see cref="CompressedStaticFilesMiddleware"/>
+/// </summary>
 public class CompressedStaticFilesOptions {
 	/// <summary>
 	/// <para>Use for SPA to serve 'index.html' or similar if requested file does not exist.</para>
@@ -48,4 +54,18 @@ public class CompressedStaticFilesOptions {
 	/// Lookup to determine if files should be compressed on response
 	/// </summary>
 	public IFileCompressionLookup? CompressionLookup { get; set; }
+
+	/// <summary>
+	/// Mutates a file in memory, during the first uncompressed read.
+	/// Use this to replace placeholders.
+	/// </summary>
+	/// <remarks>
+	/// The default implementation should look like
+	/// <code>
+	/// await StreamCopyOperation
+	/// .CopyToAsync(inputStream, outputStream, fileInfo.Length, 65536, CancellationToken.None)
+	/// .ConfigureAwait(false);
+	/// </code>
+	/// </remarks>
+	public Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? MutateFile { get; set; }
 }
