@@ -47,14 +47,14 @@ internal sealed class StaticFileInfo {
 
 	public Int64 Length => PhysicalFileInfo.Length;
 
-	public Task SendFileResponse(HttpContext context, CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate) {
+	public Task SendFileResponse(HttpContext context, CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, CancellationToken, Task>? mutate) {
 		ArgumentNullException.ThrowIfNull(context);
 
 		ApplyResponseHeaders(context.Response, StatusCodes.Status200OK, clientRequestedCompression);
 		if (HttpMethods.IsHead(context.Request.Method))
 			return Task.CompletedTask;
 
-		return SendFileAsync(clientRequestedCompression, mutate, context.Response, 0, Length, context.RequestAborted);
+		return SendFileAsync(clientRequestedCompression, mutate, context.Response, context.RequestAborted);
 	}
 
 	public static void SendErrorResponseHeader(HttpResponse response, Int32 httpStatusCode) {
@@ -89,23 +89,22 @@ internal sealed class StaticFileInfo {
 		_compressionStarted = 0;
 	}
 
-	private Task SendFileAsync(CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate, HttpResponse response, Int64 offset, Int64 count, CancellationToken ct) {
+	private Task SendFileAsync(CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, CancellationToken, Task>? mutate, HttpResponse response, CancellationToken ct) {
 		if (clientRequestedCompression == CompressionMethod.Brotli && _compressedBrotliResponse != null) {
 			response.BodyWriter.Write(_compressedBrotliResponse);
 			return Task.CompletedTask;
 		}
 
-		return SendFileAsyncCore(PhysicalFileInfo, clientRequestedCompression, mutate, response, offset, count, ct);
+		return SendFileAsyncCore(PhysicalFileInfo, clientRequestedCompression, mutate, response, ct);
 	}
 
-	internal static async Task SendFileAsyncCore(IFileInfo file, CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate, HttpResponse response, Int64 offset, Int64 count, CancellationToken ct) {
+	internal static async Task SendFileAsyncCore(IFileInfo file, CompressionMethod clientRequestedCompression, Func<IFileInfo, Stream, Stream, CancellationToken, Task>? mutate, HttpResponse response, CancellationToken ct) {
 		try {
 			// SequentialScan is a perf hint that requires extra sys-call on non-Windows OSes. (From: File.ReadAllBytesAsync)
 			FileOptions options = FileOptions.Asynchronous | (OperatingSystem.IsWindows() ? FileOptions.SequentialScan : FileOptions.None);
 			// bufferSize=1 as a workaround to indicate unbuffered read stream
 			FileStream fileContent = new(file.PhysicalPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1, options);
 			await using (fileContent.ConfigureAwait(false)) {
-				if (offset > 0L) fileContent.Seek(offset, SeekOrigin.Begin);
 				await response.StartAsync(ct).ConfigureAwait(false);
 				
 				// We have to duplicate the stream code blocks, because we doi NOT want to close the response.Body stream
@@ -113,23 +112,23 @@ internal sealed class StaticFileInfo {
 					BrotliStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
 					await using(outputStream.ConfigureAwait(false)) {
 						if (mutate != null)
-							await mutate(file, fileContent, outputStream, count, ct).ConfigureAwait(false);
+							await mutate(file, fileContent, outputStream, ct).ConfigureAwait(false);
 						else
-							await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
+							await StreamCopyOperation.CopyToAsync(fileContent, outputStream, file.Length, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 					}
 				} else if (clientRequestedCompression == CompressionMethod.Gzip) {
 					GZipStream outputStream = new(response.Body, CompressionLevel.Optimal, true);
 					await using(outputStream.ConfigureAwait(false)) {
 						if (mutate != null)
-							await mutate(file, fileContent, outputStream, count, ct).ConfigureAwait(false);
+							await mutate(file, fileContent, outputStream, ct).ConfigureAwait(false);
 						else
-							await StreamCopyOperation.CopyToAsync(fileContent, outputStream, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
+							await StreamCopyOperation.CopyToAsync(fileContent, outputStream, file.Length, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 					}
 				} else {
 					if (mutate != null)
-						await mutate(file, fileContent, response.Body, count, ct).ConfigureAwait(false);
+						await mutate(file, fileContent, response.Body, ct).ConfigureAwait(false);
 					else
-						await StreamCopyOperation.CopyToAsync(fileContent, response.Body, count, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
+						await StreamCopyOperation.CopyToAsync(fileContent, response.Body, file.Length, MagicNumbers.MaxNonLohBufferSize, ct).ConfigureAwait(false);
 				}
 			}
 		}

@@ -67,5 +67,5 @@ public class CompressedStaticFilesOptions {
 	/// .ConfigureAwait(false);
 	/// </code>
 	/// </remarks>
-	public Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? MutateFile { get; set; }
+	public Func<IFileInfo, Stream, Stream, CancellationToken, Task>? MutateFile { get; set; }
 }

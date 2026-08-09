@@ -21,7 +21,7 @@ internal class CompressedStaticFilesTests : ATest {
 	private SimpleActionQueue? _simpleActionQueue;
 
 	[MemberNotNull(nameof(_simpleActionQueue))]
-	private CompressedStaticFilesMiddleware CreateMiddleware(Boolean serveUnknownFiles = false, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate = null) {
+	private CompressedStaticFilesMiddleware CreateMiddleware(Boolean serveUnknownFiles = false, Func<IFileInfo, Stream, Stream, CancellationToken, Task>? mutate = null) {
 		MockWebHostEnvironment webHostEnv = new(new PhysicalFileProvider(Path.GetFullPath("./TestData")));
 		CompressedStaticFilesOptions options = new() {
 			CompressionLookup = StaticFileCompressionLookup.Instance,
@@ -68,7 +68,7 @@ internal class CompressedStaticFilesTests : ATest {
 	public async Task MutatesFiles() {
 		CompressedStaticFilesMiddleware m = CreateMiddleware(true, ReplacePlaceHolder);
 
-		async Task ReplacePlaceHolder(IFileInfo fileInfoi, Stream inputStream, Stream outputStream, Int64 count, CancellationToken token) {
+		async Task ReplacePlaceHolder(IFileInfo fileInfoi, Stream inputStream, Stream outputStream, CancellationToken token) {
 			String fileContent = await new StreamReader(inputStream, leaveOpen: true).ReadToEndAsync(token);
 			fileContent = fileContent.Replace("%PLACEHOLDER%", String.Empty);
 			StreamWriter streamWriter = new(outputStream, encoding: MagicNumbers.Utf8NoBom, leaveOpen: true);

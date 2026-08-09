@@ -27,11 +27,7 @@ public class RelaxedPhysicalFileProvider : IFileProvider, IDisposable {
 	private static readonly Char[] _pathSeparators = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
 	private readonly ExclusionFilters _filters;
-
-	private readonly Func<PhysicalFilesWatcher> _fileWatcherFactory;
-	private PhysicalFilesWatcher? _fileWatcher;
-	private Boolean _fileWatcherInitialized;
-	private Object _fileWatcherLock = new();
+	private readonly Lazy<PhysicalFilesWatcher> _fileWatcher;
 
 	private Boolean? _usePollingFileWatcher;
 	private Boolean? _useActivePolling;
@@ -60,7 +56,7 @@ public class RelaxedPhysicalFileProvider : IFileProvider, IDisposable {
 		// }
 
 		_filters = filters;
-		_fileWatcherFactory = CreateFileWatcher;
+		_fileWatcher = new(CreateFileWatcher, LazyThreadSafetyMode.ExecutionAndPublication);
 	}
 
 	/// <summary>
@@ -125,30 +121,10 @@ public class RelaxedPhysicalFileProvider : IFileProvider, IDisposable {
 		set => _useActivePolling = value;
 	}
 
-	private PhysicalFilesWatcher FileWatcher =>
-		LazyInitializer.EnsureInitialized(
-			ref _fileWatcher,
-			ref _fileWatcherInitialized,
-			ref _fileWatcherLock,
-			_fileWatcherFactory)!;
-
 	private PhysicalFilesWatcher CreateFileWatcher() {
 		String root = PathUtils.EnsureTrailingSlash(Path.GetFullPath(Root));
 
-		FileSystemWatcher? watcher;
-#if NETCOREAPP
-		//  For browser/iOS/tvOS we will proactively fallback to polling since FileSystemWatcher is not supported.
-		if (OperatingSystem.IsBrowser() || (OperatingSystem.IsIOS() && !OperatingSystem.IsMacCatalyst()) || OperatingSystem.IsTvOS()) {
-			UsePollingFileWatcher = true;
-			UseActivePolling = true;
-			watcher = null;
-		} else
-#endif
-		{
-			// When UsePollingFileWatcher & UseActivePolling are set, we won't use a FileSystemWatcher.
-			watcher = UsePollingFileWatcher && UseActivePolling ? null : new FileSystemWatcher(root);
-		}
-
+		FileSystemWatcher watcher = new(root);
 		PhysicalFilesWatcher pfw = new(root, watcher, UsePollingFileWatcher, _filters);
 		ReflectionHelper.SetFieldOrPropertyValue(pfw, nameof(UseActivePolling), false, () => true);
 		return pfw;
@@ -180,7 +156,7 @@ public class RelaxedPhysicalFileProvider : IFileProvider, IDisposable {
 	protected virtual void Dispose(Boolean disposing) {
 		if (_disposed) return;
 		if (disposing) {
-			_fileWatcher?.Dispose();
+			if (_fileWatcher.IsValueCreated) _fileWatcher.Value.Dispose();
 		}
 
 		_disposed = true;
@@ -315,6 +291,6 @@ public class RelaxedPhysicalFileProvider : IFileProvider, IDisposable {
 		// Relative paths starting with leading slashes are okay
 		filter = filter.TrimStart(_pathSeparators);
 
-		return FileWatcher.CreateFileChangeToken(filter);
+		return _fileWatcher.Value.CreateFileChangeToken(filter);
 	}
 }

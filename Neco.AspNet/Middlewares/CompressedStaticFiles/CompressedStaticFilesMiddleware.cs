@@ -18,6 +18,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Neco.Common.Concurrency;
 using Neco.Common.Data;
@@ -38,6 +39,8 @@ public sealed partial class CompressedStaticFilesMiddleware {
 	private readonly IFileProvider _fileProvider;
 	private readonly ConcurrentDictionary<String, StaticFileInfo> _knownStaticFiles = new(StringComparer.Ordinal);
 	private readonly IActionQueue _actionQueue;
+	private readonly Lock _directoryWatcherLock = new();
+	private IChangeToken? _directoryWatcher;
 
 	/// <inheritdoc cref="CompressedStaticFilesMiddleware"/>
 	public CompressedStaticFilesMiddleware(RequestDelegate next, IWebHostEnvironment hostingEnv, IOptions<CompressedStaticFilesOptions> options, ILogger<CompressedStaticFilesMiddleware> logger, TimeProvider? timeProvider, IActionQueue? actionQueue) {
@@ -87,6 +90,8 @@ public sealed partial class CompressedStaticFilesMiddleware {
 			return Task.CompletedTask;
 		}
 
+		InitializeDirectoryWatcher();
+
 		if (fileInfo.IsCompressible)
 			EnsureCompression(fileInfo, clientRequestedCompression);
 		else
@@ -133,6 +138,56 @@ public sealed partial class CompressedStaticFilesMiddleware {
 		return fileInfo.SendFileResponse(context, clientRequestedCompression, _options.MutateFile);
 	}
 
+	[SuppressMessage("Maintainability", "CA1508:Avoid dead conditional code", Justification = "Double check necessary for locking")]
+	private void InitializeDirectoryWatcher() {
+		return;
+		if (_directoryWatcher != null) return;
+		lock (_directoryWatcherLock) {
+			if (_directoryWatcher != null) return;
+
+			try {
+				IChangeToken changeToken = _fileProvider.Watch("**");
+				_directoryWatcher = changeToken;
+				if (changeToken is NullChangeToken) {
+					LogFileSystemWatcherNotSupported(_logger, Path.GetDirectoryName(_fileProvider.GetFileInfo("nonExistentFile.txt").PhysicalPath) ?? "?");
+					return;
+				}
+
+				if (changeToken.ActiveChangeCallbacks)
+					changeToken.RegisterChangeCallback(OnFileChanged, this);
+				else
+					_ = Task.Factory.StartNew(PollForFileChanges, this, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			}
+			catch (Exception) {
+				// Don't throw an exception and break the request if this fails
+			}
+		}
+	}
+
+	[SuppressMessage("Maintainability", "CA1508:Avoid dead conditional code")]
+	private static async Task PollForFileChanges(Object? obj) {
+		ArgumentNullException.ThrowIfNull(obj);
+		CompressedStaticFilesMiddleware csfm = (CompressedStaticFilesMiddleware)obj;
+		LogUsingPollingFileSystemWatcher(csfm._logger, Path.GetDirectoryName(csfm._fileProvider.GetFileInfo("nonExistentFile.txt").PhysicalPath) ?? "?");
+		while (csfm._directoryWatcher != null) {
+			await Task.Delay(60000).ConfigureAwait(false);
+			if (csfm._directoryWatcher == null) break;
+			if (csfm._directoryWatcher.HasChanged)
+				OnFileChanged(obj);
+		}
+	}
+
+	private static void OnFileChanged(Object? obj) {
+		ArgumentNullException.ThrowIfNull(obj);
+		CompressedStaticFilesMiddleware csfm = (CompressedStaticFilesMiddleware)obj;
+
+		if (csfm._directoryWatcher != null && csfm._directoryWatcher.HasChanged) {
+			FileSystemWatcherDetectedChanges(csfm._logger, Path.GetDirectoryName(csfm._fileProvider.GetFileInfo("nonExistentFile.txt").PhysicalPath) ?? "?");
+			// TODO debounce & implement
+			// TODO use ChangeToken.OnChange()
+		}
+	}
+
 	private static Boolean TryLookupContentType(IContentTypeProvider contentTypeProvider, CompressedStaticFilesOptions options, String path, out String? contentType) {
 		if (contentTypeProvider.TryGetContentType(path, out contentType)) return true;
 
@@ -174,7 +229,7 @@ public sealed partial class CompressedStaticFilesMiddleware {
 		if (clientRequestedCompression == CompressionMethod.None || !fileInfo.MarkForCompression())
 			return;
 
-		_actionQueue.Enqueue(static async ((StaticFileInfo sfi, Func<IFileInfo, Stream, Stream, Int64, CancellationToken, Task>? mutate) x, ILogger logger) => {
+		_actionQueue.Enqueue(static async ((StaticFileInfo sfi, Func<IFileInfo, Stream, Stream, CancellationToken, Task>? mutate) x, ILogger logger) => {
 			Stopwatch sw = Stopwatch.StartNew();
 			try {
 				// SequentialScan is a perf hint that requires extra sys-call on non-Windows OSes. (From: File.ReadAllBytesAsync)
@@ -187,7 +242,7 @@ public sealed partial class CompressedStaticFilesMiddleware {
 					Stream compressedStream = new BrotliStream(outputFileStream, CompressionLevel.SmallestSize, false);
 					await using (compressedStream.ConfigureAwait(false)) {
 						if (x.mutate != null)
-							await x.mutate(x.sfi.PhysicalFileInfo, inputStream, compressedStream, x.sfi.Length, CancellationToken.None).ConfigureAwait(false);
+							await x.mutate(x.sfi.PhysicalFileInfo, inputStream, compressedStream, CancellationToken.None).ConfigureAwait(false);
 						else
 							await StreamCopyOperation.CopyToAsync(inputStream, compressedStream, x.sfi.Length, 65536, CancellationToken.None).ConfigureAwait(false);
 					}
@@ -226,4 +281,13 @@ public sealed partial class CompressedStaticFilesMiddleware {
 
 	[LoggerMessage(LogLevel.Error, "Failed to compress {filePath}")]
 	static partial void LogFailedToCompressFilepath(ILogger logger, Exception e, String? filePath);
+
+	[LoggerMessage(LogLevel.Warning, "FileSystemWatcher not supported for {directory}")]
+	static partial void LogFileSystemWatcherNotSupported(ILogger logger, String directory);
+
+	[LoggerMessage(LogLevel.Information, "Using polling FileSystemWatcher for {directory}")]
+	static partial void LogUsingPollingFileSystemWatcher(ILogger logger, String directory);
+
+	[LoggerMessage(LogLevel.Debug, "File changes detected in {directory}")]
+	static partial void FileSystemWatcherDetectedChanges(ILogger logger, String directory);
 }
