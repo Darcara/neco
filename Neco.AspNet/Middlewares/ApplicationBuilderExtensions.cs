@@ -4,8 +4,10 @@ namespace Microsoft.AspNetCore.Builder;
 
 using System;
 using System.IO;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders.Physical;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -68,5 +70,45 @@ public static class ApplicationBuilderExtensions {
 		}
 
 		return StaticFileInfo.SendFileAsyncCore(fileinfo, compression, null, context.Response, context.RequestAborted);
+	}
+
+	/// <inheritdoc cref="WebSocketMiddlewareExtensions.UseWebSockets(Microsoft.AspNetCore.Builder.IApplicationBuilder,WebSocketOptions)"/>
+	/// <param name="enableCompression"><see langword="true"/> (default) to enable websocket per frame deflate compression</param>
+	/// <remarks>
+	/// Forces WebSocket Compression, use instead of <see cref="WebSocketMiddlewareExtensions.UseWebSockets(Microsoft.AspNetCore.Builder.IApplicationBuilder)">UseWebSockets</see>. Place before SignalR <c>MapHub</c> or <c>UseSrTsNetLayer</c>.
+	/// </remarks>
+	public static IApplicationBuilder UseCompressibleWebSockets(this IApplicationBuilder builder, Boolean enableCompression = true, WebSocketOptions? options = null) {
+		if (options == null) {
+			builder.UseWebSockets();
+		} else {
+			builder.UseWebSockets(options);
+		}
+
+		if (enableCompression) {
+			builder.Use((context, next) => {
+				if (context.WebSockets.IsWebSocketRequest &&
+				    context.Features.Get<IHttpWebSocketFeature>() is { } currentFeature) {
+					context.Features.Set<IHttpWebSocketFeature>(new ForceWebsocketCompression(currentFeature));
+				}
+
+				return next(context);
+			});
+		}
+
+		return builder;
+	}
+}
+
+/// <inheritdoc/>
+file sealed class ForceWebsocketCompression(IHttpWebSocketFeature originalFeature) : IHttpWebSocketFeature {
+	/// <inheritdoc/>
+	public Boolean IsWebSocketRequest => originalFeature.IsWebSocketRequest;
+
+	/// <inheritdoc/>
+	public Task<WebSocket> AcceptAsync(WebSocketAcceptContext context) {
+		context.DangerousEnableCompression = true;
+		// .ServerMaxWindowBits is already 15, best compression, most memory
+		// .DisableServerContextTakeover is false by default for best compression, most memory
+		return originalFeature.AcceptAsync(context);
 	}
 }
