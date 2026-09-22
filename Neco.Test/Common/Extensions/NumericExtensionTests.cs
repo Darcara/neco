@@ -1,9 +1,7 @@
 namespace Neco.Test.Common.Extensions;
 
-using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Extensions;
-using NUnit.Framework;
 
 [TestFixture]
 public class NumericExtensionTests {

@@ -1,9 +1,6 @@
 namespace Neco.Test.Common.Data;
 
-using System;
-using System.IO;
-using FluentAssertions;
-using NUnit.Framework;
+using AwesomeAssertions;
 
 public static class StreamTestHelper {
 	public static void CanReadSeak(Stream s) {

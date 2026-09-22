@@ -1,10 +1,7 @@
 namespace Neco.Test.Common.Helper;
 
-using System;
-using System.Collections.Generic;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public class UriHelperTests {

@@ -1,12 +1,7 @@
 namespace Neco.Test.Common.Data.Archive;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data.Archive;
-using NUnit.Framework;
 
 [TestFixture]
 public class FileEnumeratorTests {

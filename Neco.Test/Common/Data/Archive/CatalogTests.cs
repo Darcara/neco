@@ -1,18 +1,14 @@
 namespace Neco.Test.Common.Data.Archive;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common;
 using Neco.Common.Data;
 using Neco.Common.Data.Archive;
 using Neco.Common.Data.Hash;
 using Neco.Common.Extensions;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public class CatalogTests {

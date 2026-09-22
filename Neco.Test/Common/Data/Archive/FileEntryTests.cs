@@ -1,9 +1,7 @@
 namespace Neco.Test.Common.Data.Archive;
 
-using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data.Archive;
-using NUnit.Framework;
 
 [TestFixture]
 public class FileEntryTests {

@@ -1,7 +1,7 @@
 namespace Neco.Test.Common.Helper;
 
 using System.Reflection;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Extensions;
 using Neco.Common.Helper;
 

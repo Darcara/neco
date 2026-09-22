@@ -1,11 +1,9 @@
 namespace Neco.Test.Common.Helper;
 
-using System;
 using System.Numerics;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Extensions;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public class BitHelperTests {

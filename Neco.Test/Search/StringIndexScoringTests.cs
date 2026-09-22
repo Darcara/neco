@@ -1,9 +1,7 @@
 namespace Neco.Test.Search;
 
-using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Search;
-using NUnit.Framework;
 
 [TestFixture]
 public class StringIndexScoringTests {

@@ -100,6 +100,8 @@ public class TypeExtensionTests {
 			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<SingleAttribute>(), Has.Exactly(numberOfAttributes).Items);
 			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<MultiAttribute>(), Has.Exactly(numberOfAttributes).Items);
 			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces<SingleNonInheritingAttribute>(), Has.Exactly(numberOfAttributes).Items);
+			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces(typeof(SingleTypedAttribute<>).GetFullName()), Has.Exactly(numberOfAttributes).Items);
+			Assert.That(methodInfo.GetCustomAttributesIncludingBaseInterfaces(typeof(MultiTypedAttribute<>).GetFullName()), Has.Exactly(numberOfAttributes).Items);
 		}
 	}
 
@@ -110,6 +112,8 @@ public class TypeExtensionTests {
 		[Single("IBaseInterface.SomeMethod")]
 		[SingleNonInheriting("IBaseInterface.SomeMethod")]
 		[Multi("IBaseInterface.SomeMethod")]
+		[SingleTyped<String>("IBaseInterface.SomeMethod")]
+		[MultiTyped<String>("IBaseInterface.SomeMethod")]
 		public void SomeMethod();
 	}
 
@@ -149,6 +153,8 @@ public class TypeExtensionTests {
 		[Single("ABaseClass.SomeMethod")]
 		[SingleNonInheriting("ABaseClass.SomeMethod")]
 		[Multi("ABaseClass.SomeMethod")]
+		[SingleTyped<String>("IBaseInterface.SomeMethod")]
+		[MultiTyped<String>("IBaseInterface.SomeMethod")]
 		public abstract void SomeMethod();
 
 		[Single("ABaseClass.ProtectedMethod")]
@@ -185,6 +191,8 @@ public class TypeExtensionTests {
 		[Single("ImplementingClass.SomeMethod")]
 		[SingleNonInheriting("ImplementingClass.SomeMethod")]
 		[Multi("ImplementingClass.SomeMethod")]
+		[SingleTyped<String>("IBaseInterface.SomeMethod")]
+		[MultiTyped<String>("IBaseInterface.SomeMethod")]
 		public override void SomeMethod() => throw new NotImplementedException();
 
 		[Single("ImplementingClass.ProtectedMethod")]
@@ -192,12 +200,13 @@ public class TypeExtensionTests {
 		[Multi("ImplementingClass.ProtectedMethod")]
 		protected override void ProtectedMethod() => throw new NotImplementedException();
 
+		#endregion
+		
 		[Single("ImplementingClass.PrivateMethod")]
 		[SingleNonInheriting("ImplementingClass.PrivateMethod")]
 		[Multi("ImplementingClass.PrivateMethod")]
 		private void PrivateMethod() => throw new NotImplementedException();
 
-		#endregion
 	}
 
 	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = true)]
@@ -214,4 +223,15 @@ public class TypeExtensionTests {
 	private sealed class MultiAttribute(String Data) : Attribute {
 		public override String ToString() => Data;
 	}
+	
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = true)]
+	private sealed class SingleTypedAttribute<T>(T Data) : Attribute {
+		public override String ToString() => Data.ToString();
+	}
+	
+	[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = true)]
+	private sealed class MultiTypedAttribute<T>(T Data) : Attribute {
+		public override String ToString() => Data.ToString();
+	}
+
 }

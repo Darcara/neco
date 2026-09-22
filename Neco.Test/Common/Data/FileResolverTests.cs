@@ -1,12 +1,7 @@
 ﻿namespace Neco.Test.Common.Data;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data;
-using NUnit.Framework;
 
 [TestFixture]
 public class FileResolverTests {

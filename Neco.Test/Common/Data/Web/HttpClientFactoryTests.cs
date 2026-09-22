@@ -1,12 +1,10 @@
 namespace Neco.Test.Common.Data.Web;
 
-using System;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data.Web;
-using NUnit.Framework;
 
 [TestFixture]
 public class HttpClientFactoryTests : ATest {

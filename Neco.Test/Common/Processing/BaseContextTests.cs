@@ -1,12 +1,9 @@
 ﻿namespace Neco.Test.Common.Processing;
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Helper;
 using Neco.Common.Processing;
-using NUnit.Framework;
 
 [TestFixture]
 public class BaseContextTests {

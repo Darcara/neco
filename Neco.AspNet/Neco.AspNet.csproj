@@ -38,14 +38,14 @@
 
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="Meziantou.Analyzer" Version="3.0.1" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" PrivateAssets="All"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3"/>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="All"/>
-        <PackageReference Include="Roslynator.CodeFixes" Version="4.15.0" PrivateAssets="All"/>
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" PrivateAssets="All"/>
-        <PackageReference Include="Neco.Common" Version="0.2.4" />
+        <PackageReference Include="Meziantou.Analyzer" Version="3.0.270" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.CodeFixes" Version="5.0.0" PrivateAssets="All" />
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="10.34.0.3385" PrivateAssets="All" />
+        <PackageReference Include="Neco.Common" Version="0.2.5" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,10 +1,8 @@
 namespace Neco.Test.Common.Data.Auth;
 
-using System;
 using System.Diagnostics.CodeAnalysis;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data.Auth;
-using NUnit.Framework;
 
 [TestFixture]
 public class SingleUserTests {

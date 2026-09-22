@@ -1,9 +1,7 @@
 namespace Neco.Test.Common.Data;
 
-using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data;
-using NUnit.Framework;
 
 [TestFixture]
 public class FileCompressionLookupTests {

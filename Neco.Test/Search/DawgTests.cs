@@ -1,17 +1,12 @@
 namespace Neco.Test.Search;
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using AnyAscii;
+using AwesomeAssertions;
 using DawgSharp;
-using FluentAssertions;
 using Neco.Common.Extensions;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public partial class DawgTests {

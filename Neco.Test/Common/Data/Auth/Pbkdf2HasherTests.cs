@@ -1,13 +1,11 @@
 namespace Neco.Test.Common.Data.Auth;
 
-using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
-using FluentAssertions;
+using AwesomeAssertions;
 using Neco.Common.Data.Auth;
 using Neco.Common.Helper;
-using NUnit.Framework;
 
 [TestFixture]
 public class Pbkdf2HasherTests {
