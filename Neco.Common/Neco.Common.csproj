@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackageVersion>0.2.5</PackageVersion>
+        <PackageVersion>0.2.6</PackageVersion>
         <Title>Neco.Common</Title>
         <PackageId>Neco.Common</PackageId>
         <Authors>Darcara</Authors>
@@ -38,15 +38,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Meziantou.Analyzer" Version="3.0.85" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.300" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
-        <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="All"/>
-        <PackageReference Include="Roslynator.CodeFixes" Version="4.15.0" PrivateAssets="All"/>
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="10.25.0.139117" PrivateAssets="All" />
-        <PackageReference Include="System.IO.Hashing" Version="10.0.8" />
-        <PackageReference Include="System.Threading.RateLimiting" Version="10.0.8" PrivateAssets="All" />
+        <PackageReference Include="Meziantou.Analyzer" Version="3.0.270" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.CodeFixes" Version="5.0.0" PrivateAssets="All" />
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="10.34.0.3385" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Hashing" Version="10.0.12" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="10.0.12" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <Using Include="System"/>
